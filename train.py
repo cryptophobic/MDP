@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from main import ABCAvoidBEnv
 
@@ -48,5 +49,6 @@ while not done:
     s, r, terminated, truncated, _ = env_vis.step(a)
     done = terminated or truncated
     step += 1
+    time.sleep(0.2)
     print(f"\nStep {step}: {action_names[a]}, reward={r}")
     print(env_vis.render())

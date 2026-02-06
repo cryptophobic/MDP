@@ -15,9 +15,9 @@ import numpy as np
 # (1,1) = C (goal terminal)  <- C spans the whole bottom row like in your sketch
 
 A = (0, 0)
-B = {(0, 1), (1, 1)}
+B = {(0, 1), (1, 1), (2, 1), (3, 2), (2, 3), (1, 3)}
 # C_CELLS = {(0, 2), (2, 0)}
-C_CELLS = {(0, 2)}
+C_CELLS = {(2, 2)}
 
 UP, RIGHT, DOWN, LEFT = 0, 1, 2, 3
 
@@ -44,8 +44,8 @@ class ABCAvoidBEnv(gym.Env):
         self.rewards = rewards
         self.render_mode = render_mode
 
-        self.n_rows = 3
-        self.n_cols = 3
+        self.n_rows = 5
+        self.n_cols = 5
 
         # 4 cells -> 4 discrete observations
         self.observation_space = spaces.Discrete(self.n_rows * self.n_cols)
@@ -107,7 +107,7 @@ class ABCAvoidBEnv(gym.Env):
         if self.render_mode != "ansi":
             return None
 
-        grid = [['A' for _ in range(3)] for _ in range(3)]
+        grid = [['A' for _ in range(self.n_rows)] for _ in range(self.n_cols)]
         for pos in B:
             grid[pos[0]][pos[1]] = "B"
         for pos in C_CELLS:
