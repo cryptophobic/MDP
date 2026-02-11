@@ -1,38 +1,22 @@
 from dataclasses import dataclass
-from enum import Enum, auto
-from typing import Dict
+from enum import IntEnum
 
+class Move(IntEnum):
+    IDLE=0; LIGHT=1; HEAVY=2; BLOCK=3; PARRY=4; RIPOSTE=5
 
-class States(Enum):
-    ATTACK = auto()
-    IDLE = auto()
-    DEAD = auto()
-    PARRY = auto()
-    BLOCK = auto()
-    RIPOSTE = auto()
-    STUNNED = auto()
-    HURT = auto()
+@dataclass(frozen=True)
+class MoveSpec:
+    startup: int
+    active: int
+    recovery: int
+    damage: int
+    stun: int
+    blockable: bool = True
+    parryable: bool = True
 
-@dataclass
-class State:
-    state: States
-    frames: int
-    animation_path: str
-
-states_collection: Dict[States, State] = {
-    States.ATTACK: State(States.ATTACK, 4, "Attack_1.png"),
-    States.IDLE: State(States.IDLE, 0, "Fighting_Stance.png"),
-    States.DEAD: State(States.DEAD, 5, "Dead.png"),
-    States.PARRY: State(States.PARRY, 4, "Parry.png"),
-    States.BLOCK: State(States.BLOCK, 0, "Defense.png"),
-    States.RIPOSTE: State(States.RIPOSTE, 5, "Prick.png"),
-    States.STUNNED: State(States.STUNNED, 4, "Idke.png"),
-    States.HURT: State(States.HURT, 4, "Hurt.png")
+MOVES = {
+    Move.LIGHT:  MoveSpec(startup=1, active=1, recovery=1, damage=1, stun=1),
+    Move.HEAVY:  MoveSpec(startup=2, active=1, recovery=2, damage=2, stun=2),
+    Move.BLOCK:  MoveSpec(startup=0, active=999, recovery=0, damage=0, stun=0),
+    # ...
 }
-
-
-class StateMachine:
-
-    def __init__(self):
-        self.current_state = None
-
