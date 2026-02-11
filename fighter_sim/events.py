@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 
 class Events(Enum):
@@ -8,6 +9,7 @@ class Events(Enum):
     PARRY = 5
     PARRIED = 6
 
+@dataclass
 class Event:
     type: Events
-    value: int
+    value: int = 0
