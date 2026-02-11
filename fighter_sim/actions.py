@@ -28,7 +28,7 @@ class ActionData:
     action_type: ActionTypes
     animation: str
     total_frames: int
-    interruptable: bool
+    interruptible: bool
     frame_events: Dict[int, List[Event]]
 
 actions: Dict[ActionTypes, ActionData] = {

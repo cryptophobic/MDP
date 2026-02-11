@@ -1,7 +1,7 @@
 import pygame
 from enum import Enum, auto
-from dataclasses import dataclass
-from typing import List, Optional
+
+from fighter_sim.fighter import Fighter
 
 
 class ActionType(Enum):
