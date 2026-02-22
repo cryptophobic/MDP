@@ -12,6 +12,7 @@ class State:
         self.stamina: int = self.max_stamina
         self.current_action: ActionType = init_action
         self.current_action_frame: int = 0
+        self.current_event: Event = Event(Events.NONE)
 
     def request_action(self, action: ActionType) -> bool:
         if self.is_dead:
@@ -49,9 +50,9 @@ class State:
 
     # TODO: review several events at one fram logic
     def get_current_events(self) -> Event:
-        current_action = self.get_current_action()
-        current_event = current_action.frame_events.get(self.current_action_frame, ())
-        return current_event[0] if current_event else Event(Events.NONE)
+        current_event = self.current_event
+        self.current_event = Event(Events.NONE)
+        return current_event
 
     def next_frame(self) -> int:
         action_data = self.get_current_action()
@@ -88,5 +89,9 @@ class State:
         if self.hp == 0 and self.current_action != ActionType.DEAD:
             self.current_action = ActionType.DEAD
             self.current_action_frame = 0
+
+        current_action = self.get_current_action()
+        current_event = current_action.frame_events.get(self.current_action_frame, ())
+        self.current_event = current_event[0] if current_event and current_event[0].type != Events.NONE else self.current_event
 
         return self.current_action_frame

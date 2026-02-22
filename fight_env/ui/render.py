@@ -33,22 +33,23 @@ class Render:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == pygame.KEYDOWN:
-                match event.key:
-                    case pygame.K_ESCAPE:
-                        self.running = False
-                    case pygame.K_i:
-                        self.player.state.request_action(ActionType.ATTACK_1)
-                    case pygame.K_o:
-                        self.player.state.request_action(ActionType.DEFENSE)
-                    case pygame.K_p:
-                        self.player.state.request_action(ActionType.PARRY)
-                    case pygame.K_q:
-                        self.bot.state.request_action(ActionType.ATTACK_1)
-                    case pygame.K_w:
-                        self.bot.state.request_action(ActionType.DEFENSE)
-                    case pygame.K_e:
-                        self.bot.state.request_action(ActionType.PARRY)
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE]:
+            self.running = False
+
+        if keys[pygame.K_i]:
+            self.player.state.request_action(ActionType.ATTACK_1)
+        if keys[pygame.K_o]:
+            self.player.state.request_action(ActionType.DEFENSE)
+        if keys[pygame.K_p]:
+            self.player.state.request_action(ActionType.PARRY)
+        if keys[pygame.K_q]:
+            self.bot.state.request_action(ActionType.ATTACK_1)
+        if keys[pygame.K_w]:
+            self.bot.state.request_action(ActionType.DEFENSE)
+        if keys[pygame.K_e]:
+            self.bot.state.request_action(ActionType.PARRY)
 
     def update(self, dt: int):
         self.player.update(dt)
