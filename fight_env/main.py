@@ -17,6 +17,10 @@ def _resolve_fighters(event1: Event, event2: Event) -> Tuple[Responses, Response
         event1_res = Responses.DEAD
         event2_res = Responses.WON
 
+    if event1.type == Events.RIPOSTE:
+        event1_res = Responses.HAS_RIPOSTED
+        event2_res = Responses.HAS_BEEN_RIPOSTED
+
     if event1.type == Events.ATTACK:
         match event2.type:
             case Events.BLOCK:

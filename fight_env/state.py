@@ -8,29 +8,24 @@ class State:
         self.name: str = name
         self.max_hp: int = hp
         self.hp: int = self.max_hp
+        self.hp_candidate: int = hp
         self.max_stamina: int = stamina
         self.is_dead = False
         self.stamina_restore_value: int = 1
         self.stamina: int = self.max_stamina
+        self.stamina_candidate: int = self.stamina
         self.current_action: ActionType = init_action
         self.current_action_frame: int = 0
         self.current_event: Event = Event(Events.NONE)
         self.requested_action: ActionType = ActionType.NONE
         self.action_candidate: ActionType = ActionType.NONE
+        self.riposte_window: int = 0
+        self.parried: bool = False
 
     def request_action(self, action: ActionType) -> None:
         self.requested_action = action
 
-        # action_data = available_actions[self.current_action]
-        # if action_data.interruptible:
-        #     self._set_action(action)
-        #     self.stamina -= available_actions[action].stamina_cost
-        #     return True
-        #
-        # return False
-
     def _set_action(self, action: ActionType):
-#        logger.info(f"Requesting action: {action}", {self.name})
         self.stamina -= available_actions[action].stamina_cost
         self.current_action = action
         self.current_action_frame = 0
@@ -40,16 +35,19 @@ class State:
             case Responses.DEAD:
                 self.is_dead = True
             case Responses.HAS_BEEN_BLOCKED:
-                self.stamina = self.stamina - 2
+                self.stamina_candidate = self.stamina_candidate - 2
             case Responses.HAS_BLOCKED:
-                self.stamina = self.stamina - 1
+                self.stamina_candidate = self.stamina_candidate - 1
             case Responses.HAS_BEEN_PARRIED:
                 # critical hit
-                self.hp = max(self.hp - 4, 0)
+                self.parried = True
+            case Responses.HAS_BEEN_RIPOSTED:
+                self.hp_candidate = max(self.hp_candidate - 4, 0)
             case Responses.HAS_PARRIED:
+                self.riposte_window = 4
                 pass
             case Responses.HAS_BEEN_ATTACKED:
-                self.hp = max(self.hp - 1, 0)
+                self.hp_candidate = max(self.hp_candidate - 1, 0)
             case Responses.HAS_ATTACKED:
                 pass
             case Responses.NONE:
@@ -68,17 +66,28 @@ class State:
         if self.is_dead:
             return
 
-        action_data = self.get_current_action()
-        self.stamina -= (action_data.stamina_cost_frame - self.stamina_restore_value)
-        self.stamina = min(self.stamina, self.max_stamina)
-        self.current_action_frame += 1
-
     def resolve_next_action(self) -> None:
         if self.is_dead:
             return
 
         action_data = self.get_current_action()
+
+        # analyze difference
+        self.stamina = self.stamina_candidate
+
+        self.stamina -= (action_data.stamina_cost_frame - self.stamina_restore_value)
+        self.stamina = min(self.stamina, self.max_stamina)
+
+        hurt = self.hp_candidate < self.hp
+        self.hp = self.hp_candidate
+
+        self.current_action_frame += 1
+        self.riposte_window = max(self.riposte_window - 1, 0)
+
         requested_action = self.requested_action
+        if requested_action == ActionType.ATTACK_1 and self.riposte_window > 0:
+            requested_action = ActionType.RIPOSTE
+
         self.requested_action = ActionType.NONE
         self.action_candidate = ActionType.NONE
 
@@ -87,6 +96,15 @@ class State:
 
         if self.hp <= 0:
             self.action_candidate = ActionType.DEAD
+            return
+
+        if hurt:
+            self.action_candidate = ActionType.HURT
+            return
+
+        if self.parried:
+            self.parried = False
+            self.action_candidate = ActionType.PARRIED
             return
 
         if self.stamina <= 0:
@@ -100,14 +118,14 @@ class State:
                 self.action_candidate = ActionType.IDLE
 
         if requested_action != ActionType.NONE:
-            if action_data.interruptible or (self.current_action_frame >= action_data.frame_count and not action_data.loop):
+            is_action_expired = self.current_action_frame >= action_data.frame_count and not action_data.loop
+            if action_data.interruptible or is_action_expired:
                 self.action_candidate = requested_action
-
-        logger.info(f"Current action: {requested_action} {self.action_candidate} {self.current_action_frame}", {self.name})
-
 
     def apply_action(self) -> None:
         if self.action_candidate != ActionType.NONE:
+            if self.action_candidate != self.current_action:
+                logger.info(f"Current action: {self.action_candidate}", {self.name})
             self._set_action(self.action_candidate)
 
         self.action_candidate = ActionType.NONE
@@ -116,42 +134,3 @@ class State:
         current_action = self.get_current_action()
         current_event = current_action.frame_events.get(self.current_action_frame, ())
         self.current_event = current_event[0] if current_event and current_event[0].type != Events.NONE else self.current_event
-
-    # def _survive_current_action(self) -> None:
-    #     action_data = self.get_current_action()
-    #
-    #     if self.current_action == ActionType.DEAD:
-    #         if self.current_action_frame >= action_data.frame_count - 1:
-    #             self.is_dead = True
-    #         return
-    #
-    #     if self.hp == 0:
-    #         self._set_action(ActionType.DEAD)
-    #         return
-    #
-    #     if self.stamina < 0:
-    #         self.request_action(ActionType.STUN)
-    #
-    #     if self.current_action_frame >= action_data.frame_count:
-    #         if not action_data.loop:
-    #             self._set_action(ActionType.IDLE)
-    #
-    #         self.current_action_frame = 0
-    #
-    #
-    # def next_frame(self) -> None:
-    #     self.current_action_frame += 1
-    #     action_data = self.get_current_action()
-    #
-    #     self.stamina -= (action_data.stamina_cost_frame - self.stamina_restore_value)
-    #
-    #     self._survive_current_action()
-    #
-    #     self.stamina = min(self.stamina, self.max_stamina)
-    #
-    #     current_action = self.get_current_action()
-    #     current_event = current_action.frame_events.get(self.current_action_frame, ())
-    #     self.current_event = current_event[0] if current_event and current_event[0].type != Events.NONE else self.current_event
-    #
-    #     logger.info(f"stamina: {self.stamina}, hp: {self.hp}, state: {self.current_action}", {self.name})
-

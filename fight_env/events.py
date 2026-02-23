@@ -11,6 +11,8 @@ class Responses(Enum):
     HAS_BEEN_PARRIED = 6
     DEAD = 7
     WON = 8
+    HAS_RIPOSTED = 9
+    HAS_BEEN_RIPOSTED = 10
 
 class Events(Enum):
     NONE = 0
@@ -18,6 +20,7 @@ class Events(Enum):
     BLOCK = 2
     PARRY = 3
     DEAD = 4
+    RIPOSTE = 5
 
 @dataclass
 class Event:

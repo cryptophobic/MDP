@@ -17,7 +17,7 @@ class Fighter:
         action = self.state.get_current_action()
         animation = action.animation
         if animation:
-            frame = animation.frames[self.state.current_action_frame]
+            frame = animation.get_frame(self.state.current_action_frame)
             if not self.facing_right:
                 return pygame.transform.flip(frame, True, False)
             return frame

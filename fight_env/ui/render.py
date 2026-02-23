@@ -10,7 +10,7 @@ from fight_env.ui.fighter import Fighter
 class Render:
     def __init__(self, player_state: State, bot_state: State):
         pygame.init()
-        self.width = 1600
+        self.width = 800
         self.height = 400
         self.scale = 3
 
@@ -40,21 +40,17 @@ class Render:
             self.running = False
 
         if keys[pygame.K_i]:
-            self.player.state.request_action(ActionType.ATTACK_1)
-        if keys[pygame.K_o]:
-            self.player.state.request_action(ActionType.DEFENSE)
-        if keys[pygame.K_p]:
-            self.player.state.request_action(ActionType.PARRY)
-        if keys[pygame.K_q]:
             self.bot.state.request_action(ActionType.ATTACK_1)
-        if keys[pygame.K_w]:
+        if keys[pygame.K_o]:
             self.bot.state.request_action(ActionType.DEFENSE)
-        if keys[pygame.K_e]:
+        if keys[pygame.K_p]:
             self.bot.state.request_action(ActionType.PARRY)
-
-    # def step(self):
-    #     self.handle_input()
-    #     self.draw()
+        if keys[pygame.K_q]:
+            self.player.state.request_action(ActionType.ATTACK_1)
+        if keys[pygame.K_w]:
+            self.player.state.request_action(ActionType.DEFENSE)
+        if keys[pygame.K_e]:
+            self.player.state.request_action(ActionType.PARRY)
 
     def draw(self):
         self.screen.fill(self.bg_color)

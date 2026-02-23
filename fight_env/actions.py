@@ -20,11 +20,12 @@ class ActionType(Enum):
     PARRY = 9
     POWER_PUNCH_1 = 10
     POWER_PUNCH_2 = 11
-    PRICK = 12
+    RIPOSTE = 12
     ROLLING = 13
     RUN = 14
     SHIELD_STRIKE = 15
     WALK = 16
+    PARRIED = 17
 
 @dataclass
 class ActionData:
@@ -34,6 +35,7 @@ class ActionData:
     stamina_cost: int = 0
     stamina_cost_frame: int = 0
     loop: bool = False
+    times: int = 1
     interruptible: bool = False
     frame_events: Dict[int, Tuple[Event]] = field(default_factory=dict)
 
@@ -86,6 +88,41 @@ available_actions: Dict[ActionType, ActionData] = {
         stamina_cost=2,
         stamina_cost_frame=1,
         frame_count=4,
+    ),
+    ActionType.PARRIED: ActionData(
+        action_type=ActionType.PARRIED,
+        animation=None if RL else Animation(
+            name="parried",
+            sprite_file_name="Hurt.png"
+        ),
+        stamina_cost=0,
+        stamina_cost_frame=0,
+        frame_count=8,
+    ),
+    ActionType.HURT: ActionData(
+        action_type=ActionType.HURT,
+        animation=None if RL else Animation(
+            name="hurt",
+            sprite_file_name="Hurt.png"
+        ),
+        stamina_cost=0,
+        stamina_cost_frame=0,
+        frame_count=3,
+    ),
+    ActionType.RIPOSTE: ActionData(
+        action_type=ActionType.RIPOSTE,
+        animation=None if RL else Animation(
+            name="riposte",
+            sprite_file_name="Prick.png"
+        ),
+        frame_events={
+            3: (
+                Event(Events.RIPOSTE),
+            )
+        },
+        stamina_cost=2,
+        stamina_cost_frame=1,
+        frame_count=5,
     ),
     ActionType.DEFENSE: ActionData(
         action_type=ActionType.DEFENSE,
