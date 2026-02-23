@@ -9,6 +9,8 @@ class Responses(Enum):
     HAS_BEEN_BLOCKED = 4
     HAS_PARRIED = 5
     HAS_BEEN_PARRIED = 6
+    DEAD = 7
+    WON = 8
 
 class Events(Enum):
     NONE = 0

@@ -1,1 +1,2 @@
 RL=False
+FRAME_DURATION=120

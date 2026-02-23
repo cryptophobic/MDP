@@ -8,22 +8,23 @@ from fight_env.events import Event, Events
 
 
 class ActionType(Enum):
-    IDLE = 0
-    ATTACK_1 = 1
-    ATTACK_2 = 2
-    ATTACK_3 = 3
-    DEAD = 4
-    DEFENSE = 5
-    STUN = 6
-    HURT = 7
-    PARRY = 8
-    POWER_PUNCH_1 = 9
-    POWER_PUNCH_2 = 10
-    PRICK = 11
-    ROLLING = 12
-    RUN = 13
-    SHIELD_STRIKE = 14
-    WALK = 15
+    NONE = 0
+    IDLE = 1
+    ATTACK_1 = 2
+    ATTACK_2 = 3
+    ATTACK_3 = 4
+    DEAD = 5
+    DEFENSE = 6
+    STUN = 7
+    HURT = 8
+    PARRY = 9
+    POWER_PUNCH_1 = 10
+    POWER_PUNCH_2 = 11
+    PRICK = 12
+    ROLLING = 13
+    RUN = 14
+    SHIELD_STRIKE = 15
+    WALK = 16
 
 @dataclass
 class ActionData:
@@ -43,8 +44,7 @@ available_actions: Dict[ActionType, ActionData] = {
             name="stun",
             sprite_file_name="Idle.png",
         ),
-        stamina_cost_frame=-1,
-        interruptible = True,
+        interruptible = False,
         frame_count=6,
     ),
     ActionType.IDLE: ActionData(
@@ -108,7 +108,7 @@ available_actions: Dict[ActionType, ActionData] = {
             sprite_file_name="Dead.png",
         ),
         frame_events={
-            0: (
+            4: (
                 Event(Events.DEAD),
             )
         },
