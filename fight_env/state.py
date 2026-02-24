@@ -16,7 +16,6 @@ class State:
         self.stamina_candidate: int = self.stamina
         self.current_action: ActionType = init_action
         self.current_action_frame: int = 0
-        self.current_event: Event = Event(Events.NONE)
         self.requested_action: ActionType = ActionType.NONE
         self.action_candidate: ActionType = ActionType.NONE
         self.riposte_window: int = 0
@@ -58,9 +57,9 @@ class State:
 
     # TODO: review several events at one fram logic
     def get_current_events(self) -> Event:
-        current_event = self.current_event
-        self.current_event = Event(Events.NONE)
-        return current_event
+        current_action = self.get_current_action()
+        current_event = current_action.frame_events.get(self.current_action_frame, ())
+        return current_event[0] if current_event and current_event[0].type != Events.NONE else Event(Events.NONE)
 
     def finalise_last_step(self) -> None:
         if self.is_dead:
@@ -131,8 +130,3 @@ class State:
             self._set_action(self.action_candidate)
 
         self.action_candidate = ActionType.NONE
-
-        # TODO: workaround
-        current_action = self.get_current_action()
-        current_event = current_action.frame_events.get(self.current_action_frame, ())
-        self.current_event = current_event[0] if current_event and current_event[0].type != Events.NONE else self.current_event
