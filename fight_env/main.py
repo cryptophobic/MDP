@@ -85,3 +85,5 @@ class FightingGame:
 if __name__ == "__main__":
     game = FightingGame()
     game.run()
+
+# claude --resume 88901ca1-5626-4008-83f2-987e1f1785bf

@@ -75,13 +75,37 @@ class Render:
         # player_text = font.render(player_state, True, (200, 200, 200))
         # bot_text = font.render(bot_state, True, (200, 200, 200))
         controls_text = font.render("SPACE: Attack | B: Bot Attack | ESC: Quit", True, (150, 150, 150))
-        logs = logger.get(limit=20)
-        player_text = font.render("\n".join(log.body for log in logs if "fighter1" in log.tags), True, (200, 200, 200))
-        bot_text = font.render("\n".join(log.body for log in logs if "fighter2" in log.tags), True, (200, 200, 200))
+        logs = logger.get(limit=20, tags={self.bot.state.name, self.player.state.name})
+        lines = [log.body for log in logs if self.player.state.name in log.tags]
+        last_10 = lines[-7:]  # take last 10 entries
+        player_text = font.render("\n".join(last_10), True, (200, 200, 200))
 
-        self.screen.blit(player_text, (10, 10))
-        self.screen.blit(bot_text, (self.width - bot_text.get_width() - 10, 10))
-        self.screen.blit(controls_text, (self.width // 2 - controls_text.get_width() // 2, 10))
+        lines = [log.body for log in logs if self.bot.state.name in log.tags]
+        last_10 = lines[-7:]  # take last 10 entries
+        bot_text = font.render("\n".join(last_10), True, (200, 200, 200))
+
+        # Health and stamina bars
+        bar_w = 150
+        bar_h = 10
+        bar_y_hp = 10
+        bar_y_st = 24
+
+        for fighter, x in [(self.player, 10), (self.bot, self.width - bar_w - 10)]:
+            s = fighter.state
+            hp_ratio = max(s.hp / s.max_hp, 0)
+            st_ratio = max(s.stamina / s.max_stamina, 0)
+
+            # HP bar: dark bg + red fill
+            pygame.draw.rect(self.screen, (60, 20, 20), (x, bar_y_hp, bar_w, bar_h))
+            pygame.draw.rect(self.screen, (200, 40, 40), (x, bar_y_hp, int(bar_w * hp_ratio), bar_h))
+
+            # Stamina bar: dark bg + green fill
+            pygame.draw.rect(self.screen, (20, 60, 20), (x, bar_y_st, bar_w, bar_h))
+            pygame.draw.rect(self.screen, (40, 200, 40), (x, bar_y_st, int(bar_w * st_ratio), bar_h))
+
+        self.screen.blit(player_text, (10, 40))
+        self.screen.blit(bot_text, (self.width - bot_text.get_width() - 10, 40))
+        # self.screen.blit(controls_text, (self.width // 2 - controls_text.get_width() // 2, 10))
 
         pygame.display.flip()
 

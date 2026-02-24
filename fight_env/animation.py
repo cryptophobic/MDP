@@ -32,6 +32,5 @@ class Animation:
             self.frames.append(frame)
 
     def get_frame(self, frame_index: int) -> pygame.Surface:
-        print(f"frame index: {frame_index} {self.frame_count - 1}")
         frame_index = frame_index % self.frame_count if frame_index > 0 else 0
         return self.frames[frame_index]

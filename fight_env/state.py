@@ -4,7 +4,7 @@ from fight_env.logger import logger
 
 
 class State:
-    def __init__(self, name: str, hp: int = 6, stamina: int = 4, init_action: ActionType=ActionType.IDLE):
+    def __init__(self, name: str, hp: int = 10, stamina: int = 8, init_action: ActionType=ActionType.IDLE):
         self.name: str = name
         self.max_hp: int = hp
         self.hp: int = self.max_hp
@@ -42,9 +42,9 @@ class State:
                 # critical hit
                 self.parried = True
             case Responses.HAS_BEEN_RIPOSTED:
-                self.hp_candidate = max(self.hp_candidate - 4, 0)
+                self.hp_candidate = max(self.hp_candidate - 5, 0)
             case Responses.HAS_PARRIED:
-                self.riposte_window = 4
+                self.riposte_window = 8
                 pass
             case Responses.HAS_BEEN_ATTACKED:
                 self.hp_candidate = max(self.hp_candidate - 1, 0)
@@ -77,9 +77,11 @@ class State:
 
         self.stamina -= (action_data.stamina_cost_frame - self.stamina_restore_value)
         self.stamina = min(self.stamina, self.max_stamina)
+        self.stamina_candidate = self.stamina
 
         hurt = self.hp_candidate < self.hp
         self.hp = self.hp_candidate
+        self.hp_candidate = self.hp
 
         self.current_action_frame += 1
         self.riposte_window = max(self.riposte_window - 1, 0)
@@ -124,8 +126,8 @@ class State:
 
     def apply_action(self) -> None:
         if self.action_candidate != ActionType.NONE:
-            if self.action_candidate != self.current_action:
-                logger.info(f"Current action: {self.action_candidate}", {self.name})
+            # if self.action_candidate != self.current_action:
+            #     logger.info(f"Current action: {self.action_candidate}", {self.name})
             self._set_action(self.action_candidate)
 
         self.action_candidate = ActionType.NONE
