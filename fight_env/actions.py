@@ -98,7 +98,7 @@ available_actions: Dict[ActionType, ActionData] = {
         ),
         stamina_cost=0,
         stamina_cost_frame=0,
-        frame_count=3,
+        frame_count=2,
     ),
     ActionType.RIPOSTE: ActionData(
         action_type=ActionType.RIPOSTE,

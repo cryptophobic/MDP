@@ -9,17 +9,17 @@ class Aggressive:
         self.opponent = opponent
 
     def next_move(self):
-        # if self.opponent.current_action == ActionType.ATTACK_1:
-        #     if self.opponent.current_action_frame == 1:
-        #         if random.random() > 0.3:
-        #             self.state.request_action(ActionType.DEFENSE)
-        #             return
+        if self.opponent.current_action == ActionType.ATTACK_1:
+            if self.opponent.current_action_frame == 1:
+                if random.random() > 0.3:
+                    self.state.request_action(ActionType.DEFENSE)
+                    return
 
-        # if self.opponent.current_action == ActionType.RIPOSTE:
-        #     if self.opponent.current_action_frame == 2:
-        #         if random.random() > 0.3:
-        #             self.state.request_action(ActionType.DEFENSE)
-        #             return
+        if self.opponent.current_action == ActionType.RIPOSTE:
+            if self.opponent.current_action_frame == 2:
+                if random.random() > 0.3:
+                    self.state.request_action(ActionType.DEFENSE)
+                    return
 
         if self.opponent.current_action == ActionType.STUN:
             if random.random() > 0.3:

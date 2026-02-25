@@ -24,7 +24,6 @@ class Logger:
         self._messages: deque[LogMessage] = deque(maxlen=max_size)
 
     def log(self, level: LogLevel, body: str, tags: Optional[set[str]] = None):
-        print(body)
         self._messages.append(LogMessage(level=level, body=body, tags=tags or set()))
 
     def debug(self, body: str, tags: Optional[set[str]] = None):
