@@ -44,10 +44,11 @@ available_actions: Dict[ActionType, ActionData] = {
         action_type=ActionType.STUN,
         animation=None if RL else Animation(
             name="stun",
-            sprite_file_name="Idle.png",
+            sprite_file_name="Wounded.png",
         ),
+        loop = True,
         interruptible = False,
-        frame_count=6,
+        frame_count=8,
     ),
     ActionType.IDLE: ActionData(
         action_type=ActionType.IDLE,

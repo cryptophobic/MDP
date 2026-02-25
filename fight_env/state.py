@@ -18,32 +18,32 @@ class State:
         self.current_action_frame: int = 0
         self.requested_action: ActionType = ActionType.NONE
         self.action_candidate: ActionType = ActionType.NONE
-        self.riposte_window: int = 0
-        self.parried: bool = False
 
     def request_action(self, action: ActionType) -> None:
         self.requested_action = action
 
     def _set_action(self, action: ActionType):
-        self.stamina -= available_actions[action].stamina_cost
+        self.stamina_candidate -= available_actions[action].stamina_cost
         self.current_action = action
         self.current_action_frame = 0
 
     def process_response(self, response: Responses) -> None:
+        if response != Responses.NONE:
+            logger.info(f"{response}", {self.name})
         match response:
             case Responses.DEAD:
                 self.is_dead = True
             case Responses.HAS_BEEN_BLOCKED:
                 self.stamina_candidate = self.stamina_candidate - 2
             case Responses.HAS_BLOCKED:
-                self.stamina_candidate = self.stamina_candidate - 1
+                self.stamina_candidate = self.stamina_candidate - 2
             case Responses.HAS_BEEN_PARRIED:
                 # critical hit
-                self.parried = True
+                self.stamina_candidate = -8
             case Responses.HAS_BEEN_RIPOSTED:
                 self.hp_candidate = max(self.hp_candidate - 5, 0)
             case Responses.HAS_PARRIED:
-                self.riposte_window = 8
+                # congratulations
                 pass
             case Responses.HAS_BEEN_ATTACKED:
                 self.hp_candidate = max(self.hp_candidate - 1, 0)
@@ -60,10 +60,6 @@ class State:
         current_action = self.get_current_action()
         current_event = current_action.frame_events.get(self.current_action_frame, ())
         return current_event[0] if current_event and current_event[0].type != Events.NONE else Event(Events.NONE)
-
-    def finalise_last_step(self) -> None:
-        if self.is_dead:
-            return
 
     def resolve_next_action(self) -> None:
         if self.is_dead:
@@ -83,12 +79,8 @@ class State:
         self.hp_candidate = self.hp
 
         self.current_action_frame += 1
-        self.riposte_window = max(self.riposte_window - 1, 0)
 
         requested_action = self.requested_action
-        if requested_action == ActionType.ATTACK_1 and self.riposte_window > 0:
-            requested_action = ActionType.RIPOSTE
-
         self.requested_action = ActionType.NONE
         self.action_candidate = ActionType.NONE
 
@@ -103,16 +95,20 @@ class State:
             self.action_candidate = ActionType.HURT
             return
 
-        if self.parried:
-            self.parried = False
-            self.action_candidate = ActionType.PARRIED
-            return
-
         if self.stamina <= 0:
-            self.action_candidate = ActionType.STUN if self.current_action != ActionType.STUN else ActionType.NONE
+            if self.current_action != ActionType.STUN or self.current_action_frame >= action_data.frame_count:
+                self.action_candidate = ActionType.STUN
             return
 
-        if self.current_action_frame >= action_data.frame_count:
+        if self.current_action == ActionType.STUN:
+            stunning_expired = self.current_action == ActionType.STUN and self.stamina >= self.max_stamina // 2
+            if stunning_expired:
+                self.action_candidate = ActionType.IDLE
+            elif self.current_action_frame >= action_data.frame_count:
+                self.action_candidate = ActionType.STUN
+                return
+
+        elif self.current_action_frame >= action_data.frame_count:
             if action_data.loop:
                 self.action_candidate = self.current_action
             else:
@@ -123,10 +119,12 @@ class State:
             if action_data.interruptible or is_action_expired:
                 self.action_candidate = requested_action
 
+
     def apply_action(self) -> None:
         if self.action_candidate != ActionType.NONE:
-            # if self.action_candidate != self.current_action:
-            #     logger.info(f"Current action: {self.action_candidate}", {self.name})
+            if self.action_candidate != ActionType.IDLE and self.action_candidate != self.current_action:
+                logger.info(f"{self.action_candidate}", {self.name})
+
             self._set_action(self.action_candidate)
 
         self.action_candidate = ActionType.NONE

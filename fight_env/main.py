@@ -1,5 +1,6 @@
 from typing import Tuple
 
+from fight_env.actions import ActionType
 from fight_env.config import FRAME_DURATION
 from fight_env.events import Events, Responses, Event
 from fight_env.logger import logger
@@ -7,6 +8,7 @@ from fight_env.ui.render import Render
 from fight_env.state import State
 from config import RL
 import time
+import pygame
 
 
 def _resolve_fighters(event1: Event, event2: Event) -> Tuple[Responses, Responses]:
@@ -17,11 +19,7 @@ def _resolve_fighters(event1: Event, event2: Event) -> Tuple[Responses, Response
         event1_res = Responses.DEAD
         event2_res = Responses.WON
 
-    if event1.type == Events.RIPOSTE:
-        event1_res = Responses.HAS_RIPOSTED
-        event2_res = Responses.HAS_BEEN_RIPOSTED
-
-    if event1.type == Events.ATTACK:
+    if event1.type == Events.ATTACK or event1.type == Events.RIPOSTE:
         match event2.type:
             case Events.BLOCK:
                 event1_res = Responses.HAS_BEEN_BLOCKED
@@ -30,8 +28,12 @@ def _resolve_fighters(event1: Event, event2: Event) -> Tuple[Responses, Response
                 event1_res = Responses.HAS_BEEN_PARRIED
                 event2_res = Responses.HAS_PARRIED
             case _:
-                event1_res = Responses.HAS_ATTACKED
-                event2_res = Responses.HAS_BEEN_ATTACKED
+                if event1.type == Events.RIPOSTE:
+                    event1_res = Responses.HAS_RIPOSTED
+                    event2_res = Responses.HAS_BEEN_RIPOSTED
+                else:
+                    event1_res = Responses.HAS_ATTACKED
+                    event2_res = Responses.HAS_BEEN_ATTACKED
 
     return event1_res, event2_res
 
@@ -44,18 +46,25 @@ class FightingGame:
             self.render = Render(self.fighter1, self.fighter2)
 
     def update_state(self):
-        for fighter in [self.fighter1, self.fighter2]:
-            fighter.finalise_last_step()
-            fighter.resolve_next_action()
-            fighter.apply_action()
+        self.fighter1.resolve_next_action()
+        self.fighter2.resolve_next_action()
+
+        fighter1_stunned = self.fighter1.action_candidate == ActionType.STUN or (self.fighter1.current_action == ActionType.STUN and self.fighter1.action_candidate == ActionType.NONE)
+        fighter2_stunned = self.fighter2.action_candidate == ActionType.STUN or (self.fighter2.current_action == ActionType.STUN and self.fighter2.action_candidate == ActionType.NONE)
+
+        if fighter1_stunned and self.fighter2.action_candidate == ActionType.ATTACK_1:
+            self.fighter2.action_candidate = ActionType.RIPOSTE
+
+        if fighter2_stunned and self.fighter1.action_candidate == ActionType.ATTACK_1:
+            self.fighter1.action_candidate = ActionType.RIPOSTE
+
+        self.fighter1.apply_action()
+        self.fighter2.apply_action()
 
     def step(self) -> None:
 
         fighter1_event = self.fighter1.get_current_events()
         fighter2_event = self.fighter2.get_current_events()
-
-        # logger.info(f"{fighter1_event}", {"fighter1"})
-        # logger.info(f"{fighter2_event}", {"fighter2"})
 
         fighter1_res, fighter2_res = _resolve_fighters(fighter1_event, fighter2_event)
 
@@ -81,6 +90,11 @@ class FightingGame:
                     self.step()
                 else:
                     time.sleep(0.001)
+            waiting = True
+            while waiting:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
+                        waiting = False
 
 if __name__ == "__main__":
     game = FightingGame()
