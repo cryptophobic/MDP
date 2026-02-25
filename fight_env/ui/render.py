@@ -39,12 +39,12 @@ class Render:
         if keys[pygame.K_ESCAPE]:
             self.running = False
 
-        if keys[pygame.K_i]:
-            self.bot.state.request_action(ActionType.ATTACK_1)
-        if keys[pygame.K_o]:
-            self.bot.state.request_action(ActionType.DEFENSE)
-        if keys[pygame.K_p]:
-            self.bot.state.request_action(ActionType.PARRY)
+        # if keys[pygame.K_i]:
+        #     self.bot.state.request_action(ActionType.ATTACK_1)
+        # if keys[pygame.K_o]:
+        #     self.bot.state.request_action(ActionType.DEFENSE)
+        # if keys[pygame.K_p]:
+        #     self.bot.state.request_action(ActionType.PARRY)
         if keys[pygame.K_q]:
             self.player.state.request_action(ActionType.ATTACK_1)
         if keys[pygame.K_w]:

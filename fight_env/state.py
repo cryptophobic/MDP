@@ -4,7 +4,7 @@ from fight_env.logger import logger
 
 
 class State:
-    def __init__(self, name: str, hp: int = 10, stamina: int = 8, init_action: ActionType=ActionType.IDLE):
+    def __init__(self, name: str, hp: int = 10, stamina: int = 20, init_action: ActionType=ActionType.IDLE):
         self.name: str = name
         self.max_hp: int = hp
         self.hp: int = self.max_hp
@@ -34,9 +34,9 @@ class State:
             case Responses.DEAD:
                 self.is_dead = True
             case Responses.HAS_BEEN_BLOCKED:
-                self.stamina_candidate = self.stamina_candidate - 2
+                self.stamina_candidate = self.stamina_candidate - 4
             case Responses.HAS_BLOCKED:
-                self.stamina_candidate = self.stamina_candidate - 2
+                self.stamina_candidate = self.stamina_candidate - 4
             case Responses.HAS_BEEN_PARRIED:
                 # critical hit
                 self.stamina_candidate = -8

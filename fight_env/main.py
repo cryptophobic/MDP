@@ -1,9 +1,9 @@
 from typing import Tuple
 
 from fight_env.actions import ActionType
+from fight_env.bots.aggressive import Aggressive
 from fight_env.config import FRAME_DURATION
 from fight_env.events import Events, Responses, Event
-from fight_env.logger import logger
 from fight_env.ui.render import Render
 from fight_env.state import State
 from config import RL
@@ -41,11 +41,13 @@ class FightingGame:
     def __init__(self):
         self.fighter1 = State(name="fighter1")
         self.fighter2 = State(name="fighter2")
+        self.aggressive_bot = Aggressive(self.fighter2, self.fighter1)
         self.render = None
         if not RL:
             self.render = Render(self.fighter1, self.fighter2)
 
     def update_state(self):
+        self.aggressive_bot.next_move()
         self.fighter1.resolve_next_action()
         self.fighter2.resolve_next_action()
 

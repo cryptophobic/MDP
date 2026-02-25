@@ -90,16 +90,6 @@ available_actions: Dict[ActionType, ActionData] = {
         stamina_cost_frame=1,
         frame_count=4,
     ),
-    ActionType.PARRIED: ActionData(
-        action_type=ActionType.PARRIED,
-        animation=None if RL else Animation(
-            name="parried",
-            sprite_file_name="Hurt.png"
-        ),
-        stamina_cost=0,
-        stamina_cost_frame=0,
-        frame_count=8,
-    ),
     ActionType.HURT: ActionData(
         action_type=ActionType.HURT,
         animation=None if RL else Animation(
