@@ -136,11 +136,11 @@ available_actions: Dict[ActionType, ActionData] = {
             sprite_file_name="Dead.png",
         ),
         frame_events={
-            4: (
+            3: (
                 Event(Events.DEAD),
             )
         },
-        loop=True,
+        loop=False,
         frame_count=5,
     )
 }

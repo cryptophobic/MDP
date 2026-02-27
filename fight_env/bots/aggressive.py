@@ -26,7 +26,7 @@ class Aggressive:
                 self.state.request_action(ActionType.ATTACK_1)
             return
 
-        if self.state.stamina == self.state.max_stamina:
-            if random.random() > 0.3:
+        if self.state.stamina >= self.state.max_stamina // 2:
+            if random.random() > 0.8:
                 self.state.request_action(ActionType.ATTACK_1)
             return
