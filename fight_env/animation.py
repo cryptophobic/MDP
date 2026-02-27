@@ -27,10 +27,11 @@ class Animation:
         self.frame_duration = frame_duration
         self.frame_count = frame_count
         self.frames = []
+        self.current_frame = 0
         for i in range(frame_count):
             frame = sprite_sheet.subsurface((i * frame_size, 0, frame_size, frame_size))
             self.frames.append(frame)
 
-    def get_frame(self, frame_index: int) -> pygame.Surface:
-        frame_index = frame_index % self.frame_count if frame_index > 0 else 0
-        return self.frames[frame_index]
+    def get_frame(self, ahead):
+        index = ahead % self.frame_count
+        return self.frames[index]

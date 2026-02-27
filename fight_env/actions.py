@@ -48,7 +48,7 @@ available_actions: Dict[ActionType, ActionData] = {
         ),
         loop = True,
         interruptible = False,
-        frame_count=8,
+        frame_count=0,
     ),
     ActionType.IDLE: ActionData(
         action_type=ActionType.IDLE,
@@ -58,7 +58,7 @@ available_actions: Dict[ActionType, ActionData] = {
         ),
         loop = True,
         interruptible = True,
-        frame_count=6,
+        frame_count=0,
     ),
     ActionType.ATTACK_1: ActionData(
         action_type=ActionType.ATTACK_1,

@@ -5,6 +5,8 @@ from fight_env.logger import logger
 
 class State:
     def __init__(self, name: str, hp: int = 30, stamina: int = 20, init_action: ActionType=ActionType.IDLE):
+        self.global_frame_number: int = 0
+        self.action_start_frame: int = 0
         self.name: str = name
         self.max_hp: int = hp
         self.hp: int = self.max_hp
@@ -26,6 +28,7 @@ class State:
         self.stamina_candidate -= available_actions[action].stamina_cost
         self.current_action = action
         self.current_action_frame = 0
+        self.action_start_frame = self.global_frame_number
 
     def process_response(self, response: Responses) -> None:
         if response != Responses.NONE:
@@ -127,4 +130,5 @@ class State:
 
             self._set_action(self.action_candidate)
 
+        self.global_frame_number += 1
         self.action_candidate = ActionType.NONE

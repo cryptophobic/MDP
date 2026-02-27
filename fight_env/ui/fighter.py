@@ -1,6 +1,7 @@
 from typing import Optional
 import pygame
 
+from fight_env.actions import ActionType
 from fight_env.state import State
 
 class Fighter:
@@ -17,7 +18,8 @@ class Fighter:
         action = self.state.get_current_action()
         animation = action.animation
         if animation:
-            frame = animation.get_frame(self.state.current_action_frame)
+            ahead = self.state.global_frame_number - self.state.action_start_frame
+            frame = animation.get_frame(ahead)
             if not self.facing_right:
                 return pygame.transform.flip(frame, True, False)
             return frame
