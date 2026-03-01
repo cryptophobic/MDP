@@ -4,11 +4,14 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 
-from fight_env.actions import ActionType
+from fight_env.inventory.armour import ArmourTypes
+from fight_env.inventory.shields import Shields
+from fight_env.inventory.weapons import Weapons
+from fight_env.state.actions import ActionType
 from fight_env.bots.aggressive import Aggressive
-from fight_env.events import Responses
+from fight_env.state.events import Responses
 from fight_env.fight import Fight
-from fight_env.state import State
+from fight_env.state.state import State
 
 
 # Compact mapping: ActionType -> 0..8 for observation space
@@ -75,7 +78,15 @@ class FightEnv(gym.Env):
     def reset(self, *, seed: Optional[int] = None, options: Optional[Dict[str, Any]] = None):
         super().reset(seed=seed)
         self.agent = State(name="agent")
+        self.agent.stats.armour = ArmourTypes.LIGHT_ARMOUR
+        self.agent.stats.shield = Shields.BUCKLER
+        self.agent.stats.weapon = Weapons.GLADIUS
+
         self.opponent = State(name="opponent")
+        self.opponent.stats.armour = ArmourTypes.LIGHT_ARMOUR
+        self.opponent.stats.shield = Shields.BUCKLER
+        self.opponent.stats.weapon = Weapons.GLADIUS
+
         self.fight = Fight(self.agent, self.opponent)
         self.bot = Aggressive(self.opponent, self.agent)
         self.step_count = 0
@@ -95,19 +106,17 @@ class FightEnv(gym.Env):
 
         # 3. Resolve combat and get responses
         f1_res, f1_res2, f2_res, f2_res2 = self.fight.resolve_combat()
+        base_damage = self.fight.fighter1.stats.weapon.base_damage
+        critical_damage = self.fight.fighter1.stats.weapon.critical_damage
 
         # 4. Compute reward (f1 = agent, f2 = opponent)
         reward = 0.0
-        if f1_res == Responses.HAS_ATTACKED:
-            reward += 0.3
-        if f1_res == Responses.HAS_RIPOSTED:
-            reward += 1.0
-        if f1_res == Responses.HAS_PARRIED:
+        if f1_res.type == Responses.HAS_ATTACKED:
+            reward += 0.3 if f1_res.value == base_damage else 1.0
+        if f1_res.type == Responses.HAS_PARRIED:
             reward += 0.5
-        if f1_res2 == Responses.HAS_BEEN_ATTACKED:
-            reward -= 0.3
-        if f1_res2 == Responses.HAS_BEEN_RIPOSTED:
-            reward -= 1.0
+        if f1_res2.type == Responses.HAS_BEEN_ATTACKED:
+            reward -= 0.3 if f1_res2.value == base_damage else 1.0
 
         # 5. Check terminal conditions
         terminated = self.agent.is_dead or self.opponent.is_dead

@@ -1,5 +1,7 @@
-from fight_env.actions import ActionType, states, ActionData
-from fight_env.events import Event, Responses, Events
+from fight_env.state.actions import ActionType, states, ActionData
+from fight_env.state.events import Event, Responses, Events, Response
+from fight_env.state.stats import Stats, INSTANT_STUN, STAMINA_BOTTOM_LIMIT
+
 
 def _resolve_priority(candidate_action: ActionType, current_action: ActionType):
     if candidate_action == ActionType.NONE:
@@ -21,17 +23,17 @@ class State:
     def __init__(self, name: str, hp: int = 30, stamina: int = 20, init_action: ActionType=ActionType.IDLE):
         self.global_frame_number: int = 0
         self.action_start_frame: int = 0
-        self.name: str = name
-        self.max_hp: int = hp
-        self.hp: int = self.max_hp
-        self.hp_candidate: int = hp
-        self.max_stamina: int = stamina
-        self.is_dead = False
-        self.stamina_restore_value: int = 1
-        self.stamina: int = self.max_stamina
-        self.stamina_candidate: int = self.stamina
-        self.current_action: ActionType = init_action
         self.current_action_frame: int = 0
+
+        self.stats: Stats = Stats(name=name, hp=hp, stamina=stamina)
+
+        self.hp: int = self.stats.max_hp
+        self.hp_candidate: int = hp
+        self.is_dead = False
+        self.stamina: int = self.stats.max_stamina
+        self.stamina_candidate: int = self.stamina
+
+        self.current_action: ActionType = init_action
         self.requested_action: ActionType = ActionType.NONE
         self.action_candidate: ActionType = ActionType.NONE
 
@@ -60,7 +62,7 @@ class State:
 
     def is_current_action_expired(self) -> bool:
         if self.current_action == ActionType.STUNNED:
-            return self.stamina_candidate >= self.max_stamina // 2
+            return self.stamina_candidate >= self.stats.max_stamina // 2
 
         return not states[self.current_action].loop and self.current_action_frame >= states[self.current_action].frame_count
 
@@ -77,58 +79,44 @@ class State:
             if action == self.current_action:
                 return
 
-        self.stamina_candidate -= states[action].stamina_cost
+        self.stamina_candidate -= self.stats.stamina_cost_per_action(action)
         self.current_action = action
         self.current_action_frame = 0
         self.action_start_frame = self.global_frame_number
 
-    def process_response(self, response: Responses) -> None:
-        # if response != Responses.NONE:
-        #     logger.info(f"{response}", {self.name})
-        match response:
-            case Responses.DEAD:
-                self.is_dead = True
-            case Responses.HAS_BEEN_BLOCKED:
-                self.stamina_candidate = self.stamina_candidate - 4
-            case Responses.HAS_BLOCKED:
-                self.stamina_candidate = self.stamina_candidate - 4
-            case Responses.HAS_BEEN_PARRIED:
-                # critical hit
-                self.stamina_candidate = -4
-            case Responses.HAS_BEEN_RIPOSTED:
-                self.hp_candidate = max(self.hp_candidate - 5, 0)
-            case Responses.HAS_PARRIED:
-                # congratulations
-                pass
-            case Responses.HAS_BEEN_ATTACKED:
-                self.hp_candidate = max(self.hp_candidate - 1, 0)
-            case Responses.HAS_ATTACKED:
-                pass
-            case Responses.NONE:
-                pass
+    def process_response(self, response: Response) -> None:
+        if response.type == Responses.DEAD:
+            self.is_dead = True
+            return
+
+        stamina_cost = self.stats.stamina_cost_on_response(response)
+        if stamina_cost == INSTANT_STUN:
+            stamina_cost = self.stamina_candidate - STAMINA_BOTTOM_LIMIT
+
+        self.stamina_candidate -= stamina_cost
+        hp_cost = self.stats.hp_cost_on_response(response)
+        self.hp_candidate = max(self.hp_candidate - hp_cost, 0)
 
     def get_current_action(self) -> ActionData:
         return states[self.current_action]
 
-    # TODO: review several events at one fram logic
+    # TODO: review several events at one frame logic
     def get_current_events(self) -> Event:
         current_action = self.get_current_action()
-        current_event = current_action.frame_events.get(self.current_action_frame, ())
-        return current_event[0] if current_event and current_event[0].type != Events.NONE else Event(Events.NONE)
+        current_event_type = current_action.frame_events.get(self.current_action_frame, ())
+        current_event_type = current_event_type[0] if current_event_type else Events.NONE
 
-    def _process_reactive_actions(self):
-        if self.hp_candidate <= 0:
-            self.action_candidate = ActionType.DEAD
-            return
+        return self.stats.get_event(current_event_type)
 
     def resolve_next_action(self) -> None:
         if self.is_dead:
             return
 
-        action_data = self.get_current_action()
+        stamina_cost = self.stats.stamina_cost_per_frame(self.current_action)
+        stamina_cost -= self.stats.stamina_restore_per_frame
 
-        self.stamina_candidate -= (action_data.stamina_cost_frame - self.stamina_restore_value)
-        self.stamina_candidate = min(self.stamina_candidate, self.max_stamina)
+        self.stamina_candidate -= stamina_cost
+        self.stamina_candidate = min(self.stamina_candidate, self.stats.max_stamina)
 
         self.process_reactive_action()
         self.process_player_action()

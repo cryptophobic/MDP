@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
-from enum import Enum, IntEnum
+from enum import IntEnum
 from typing import Dict, Optional, Tuple
 
 from fight_env.animation import Animation
 from fight_env.config import RL
-from fight_env.events import Event, Events
+from fight_env.state.events import Event, Events
 
 class ActionType(IntEnum):
     NONE = 0
@@ -37,9 +37,8 @@ class ActionData:
     stamina_cost: int = 0
     stamina_cost_frame: int = 0
     loop: bool = False
-    times: int = 1
     interruptible: bool = False
-    frame_events: Dict[int, Tuple[Event]] = field(default_factory=dict)
+    frame_events: Dict[int, Tuple[Events]] = field(default_factory=dict)
 
 states: Dict[int, ActionData] = {
     ActionType.STUNNED: ActionData(
@@ -73,9 +72,7 @@ states: Dict[int, ActionData] = {
         interrupt_priority=50,
         alternatives={ ActionType.RIPOSTE, },
         frame_events={
-            2: (
-                Event(Events.ATTACK, 1),
-            )
+            2: ( Events.ATTACK, )
         },
         stamina_cost=2,
         stamina_cost_frame=1,
@@ -90,9 +87,7 @@ states: Dict[int, ActionData] = {
         requestable=True,
         interrupt_priority=50,
         frame_events={
-            1: (
-                Event(Events.PARRY),
-            )
+            1: ( Events.PARRY,)
         },
         stamina_cost=2,
         stamina_cost_frame=1,
@@ -118,9 +113,7 @@ states: Dict[int, ActionData] = {
         ),
         alternatives={ ActionType.ATTACK_1, },
         frame_events={
-            3: (
-                Event(Events.RIPOSTE),
-            )
+            3: ( Events.CRITICAL_ATTACK, )
         },
         stamina_cost=2,
         stamina_cost_frame=1,
@@ -135,9 +128,7 @@ states: Dict[int, ActionData] = {
         ),
         requestable=True,
         frame_events={
-            0: (
-                Event(Events.BLOCK),
-            )
+            0: ( Events.BLOCK, )
         },
         stamina_cost_frame=1,
         frame_count=1,
@@ -150,9 +141,7 @@ states: Dict[int, ActionData] = {
         ),
         interrupt_priority=100,
         frame_events={
-            3: (
-                Event(Events.DEAD),
-            )
+            3: ( Events.DEAD, )
         },
         loop=False,
         frame_count=5,

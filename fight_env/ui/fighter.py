@@ -1,7 +1,7 @@
 from typing import Optional
 import pygame
 
-from fight_env.state import State
+from fight_env.state.state import State
 
 class Fighter:
     def __init__(self, x: int, y: int, facing_right: bool = True):

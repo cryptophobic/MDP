@@ -1,9 +1,9 @@
 import pygame
 
-from fight_env.actions import ActionType
+from fight_env.state.actions import ActionType
 from fight_env.animation import FRAME_SIZE
 from fight_env.logger import logger
-from fight_env.state import State
+from fight_env.state.state import State
 from fight_env.ui.fighter import Fighter
 
 
@@ -75,12 +75,12 @@ class Render:
         # player_text = font.render(player_state, True, (200, 200, 200))
         # bot_text = font.render(bot_state, True, (200, 200, 200))
         # controls_text = font.render("SPACE: Attack | B: Bot Attack | ESC: Quit", True, (150, 150, 150))
-        logs = logger.get(limit=50, tags={self.bot.state.name, self.player.state.name})
-        lines = [log.body for log in logs if self.player.state.name in log.tags]
+        logs = logger.get(limit=50, tags={self.bot.state.stats.name, self.player.state.stats.name})
+        lines = [log.body for log in logs if self.player.state.stats.name in log.tags]
         last_10 = lines[-14:]  # take last 10 entries
         player_text = font.render("\r\n".join(last_10), True, (200, 200, 200))
 
-        lines = [log.body for log in logs if self.bot.state.name in log.tags]
+        lines = [log.body for log in logs if self.bot.state.stats.name in log.tags]
         last_10 = lines[-14:]  # take last 10 entries
         bot_text = font.render("\r\n".join(last_10), True, (200, 200, 200))
 
@@ -92,8 +92,8 @@ class Render:
 
         for fighter, x in [(self.player, 10), (self.bot, self.width - bar_w - 10)]:
             s = fighter.state
-            hp_ratio = max(s.hp / s.max_hp, 0)
-            st_ratio = max(s.stamina / s.max_stamina, 0)
+            hp_ratio = max(s.hp / s.stats.max_hp, 0)
+            st_ratio = max(s.stamina / s.stats.max_stamina, 0)
 
             # HP bar: dark bg + red fill
             pygame.draw.rect(self.screen, (60, 20, 20), (x, bar_y_hp, bar_w, bar_h))

@@ -1,35 +1,20 @@
 from typing import Tuple
 
-from fight_env.actions import ActionType
-from fight_env.events import Events, Responses, Event
-from fight_env.state import State
+from fight_env.state.actions import ActionType
+from fight_env.state.events import Events, Responses, Event, resolution_table, Response
+from fight_env.state.state import State
 
+def resolve_fighters(event1: Event, event2: Event) -> Tuple[Response, Response]:
+    for events_tuple in [
+        (event1.type, event2.type),
+        (event1.type, Events.ANY)]:
+        rules = resolution_table.get(events_tuple)
+        if rules is not None:
+            for rule in rules:
+                if rule.when(event1, event2):
+                    return rule.emit(event1, event2)
 
-def resolve_fighters(event1: Event, event2: Event) -> Tuple[Responses, Responses]:
-    event1_res = Responses.NONE
-    event2_res = Responses.NONE
-
-    if event1.type == Events.DEAD:
-        event1_res = Responses.DEAD
-        event2_res = Responses.WON
-
-    if event1.type == Events.ATTACK or event1.type == Events.RIPOSTE:
-        match event2.type:
-            case Events.BLOCK:
-                event1_res = Responses.HAS_BEEN_BLOCKED
-                event2_res = Responses.HAS_BLOCKED
-            case Events.PARRY:
-                event1_res = Responses.HAS_BEEN_PARRIED
-                event2_res = Responses.HAS_PARRIED
-            case _:
-                if event1.type == Events.RIPOSTE:
-                    event1_res = Responses.HAS_RIPOSTED
-                    event2_res = Responses.HAS_BEEN_RIPOSTED
-                else:
-                    event1_res = Responses.HAS_ATTACKED
-                    event2_res = Responses.HAS_BEEN_ATTACKED
-
-    return event1_res, event2_res
+    return Response(Responses.NONE), Response(Responses.NONE)
 
 
 class Fight:
@@ -50,7 +35,7 @@ class Fight:
         self.fighter1.apply_action()
         self.fighter2.apply_action()
 
-    def resolve_combat(self) -> Tuple[Responses, Responses, Responses, Responses]:
+    def resolve_combat(self) -> Tuple[Response, Response, Response, Response]:
         fighter1_event = self.fighter1.get_current_events()
         fighter2_event = self.fighter2.get_current_events()
 

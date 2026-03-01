@@ -1,7 +1,7 @@
 import random
 
-from fight_env.actions import ActionType
-from fight_env.state import State
+from fight_env.state.actions import ActionType
+from fight_env.state.state import State
 
 class Aggressive:
     def __init__(self, state: State, opponent: State):
@@ -26,7 +26,7 @@ class Aggressive:
                 self.state.request_action(ActionType.ATTACK_1)
             return
 
-        if self.state.stamina >= self.state.max_stamina // 2:
+        if self.state.stamina >= self.state.stats.max_stamina // 2:
             if random.random() > 0.8:
                 self.state.request_action(ActionType.ATTACK_1)
             return
