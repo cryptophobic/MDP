@@ -40,6 +40,8 @@ class Stats:
         self.name: str = name
         self._base_hp: int = hp
         self._base_stamina: int = stamina
+        self._hp: int = hp
+        self._stamina: int = stamina
 
         self._armour: Armour = armour_types[ArmourTypes.NONE]
         self._shield: Shield = shields[Shields.NONE]
@@ -49,6 +51,14 @@ class Stats:
         self._weight: int = 0
         self._stamina_restore_value: int = 0
         self._base_stamina_expense: int = 0
+
+    @property
+    def hp(self) -> int:
+        return self._hp
+
+    @property
+    def stamina(self) -> int:
+        return self._stamina
 
     @property
     def armour(self) -> Armour:
@@ -127,7 +137,6 @@ class Stats:
     def hp_cost_on_response(self, response: Response):
         match response.type:
             case Responses.HAS_BEEN_ATTACKED:
-                # logger.info(f"value {response.value}", {self.name})
                 return response.value - self._armour.defense
 
         return 0
