@@ -168,5 +168,4 @@ class State:
 
         requested_action = self.requested_action
         self.requested_action = ActionType.NONE
-
         self.set_action_candidate(requested_action)
