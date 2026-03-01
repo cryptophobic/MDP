@@ -18,7 +18,7 @@ ACTION_TO_IDX = {
     ActionType.ATTACK_1: 2,
     ActionType.DEFENSE: 3,
     ActionType.PARRY: 4,
-    ActionType.STUN: 5,
+    ActionType.STUNNED: 5,
     ActionType.HURT: 6,
     ActionType.RIPOSTE: 7,
     ActionType.DEAD: 8,

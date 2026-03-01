@@ -21,7 +21,7 @@ class Aggressive:
                     self.state.request_action(ActionType.DEFENSE)
                     return
 
-        if self.opponent.current_action == ActionType.STUN:
+        if self.opponent.current_action == ActionType.STUNNED:
             if random.random() > 0.3:
                 self.state.request_action(ActionType.ATTACK_1)
             return

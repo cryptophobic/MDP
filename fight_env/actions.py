@@ -1,13 +1,12 @@
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Dict, Optional, Tuple
 
 from fight_env.animation import Animation
 from fight_env.config import RL
 from fight_env.events import Event, Events
 
-
-class ActionType(Enum):
+class ActionType(IntEnum):
     NONE = 0
     IDLE = 1
     ATTACK_1 = 2
@@ -15,7 +14,7 @@ class ActionType(Enum):
     ATTACK_3 = 4
     DEAD = 5
     DEFENSE = 6
-    STUN = 7
+    STUNNED = 7
     HURT = 8
     PARRY = 9
     POWER_PUNCH_1 = 10
@@ -32,6 +31,9 @@ class ActionData:
     action_type: ActionType
     animation: Optional[Animation]
     frame_count: int
+    interrupt_priority: int = 0
+    requestable: bool = False
+    alternatives: set[ActionType] = field(default_factory=set)
     stamina_cost: int = 0
     stamina_cost_frame: int = 0
     loop: bool = False
@@ -39,13 +41,14 @@ class ActionData:
     interruptible: bool = False
     frame_events: Dict[int, Tuple[Event]] = field(default_factory=dict)
 
-available_actions: Dict[ActionType, ActionData] = {
-    ActionType.STUN: ActionData(
-        action_type=ActionType.STUN,
+states: Dict[int, ActionData] = {
+    ActionType.STUNNED: ActionData(
+        action_type=ActionType.STUNNED,
         animation=None if RL else Animation(
             name="stun",
             sprite_file_name="Wounded.png",
         ),
+        interrupt_priority=50,
         loop = True,
         interruptible = False,
         frame_count=0,
@@ -66,6 +69,9 @@ available_actions: Dict[ActionType, ActionData] = {
             name="attack",
             sprite_file_name="Attack_1.png"
         ),
+        requestable=True,
+        interrupt_priority=50,
+        alternatives={ ActionType.RIPOSTE, },
         frame_events={
             2: (
                 Event(Events.ATTACK, 1),
@@ -81,6 +87,8 @@ available_actions: Dict[ActionType, ActionData] = {
             name="parry",
             sprite_file_name="Parry.png"
         ),
+        requestable=True,
+        interrupt_priority=50,
         frame_events={
             1: (
                 Event(Events.PARRY),
@@ -92,6 +100,7 @@ available_actions: Dict[ActionType, ActionData] = {
     ),
     ActionType.HURT: ActionData(
         action_type=ActionType.HURT,
+        interrupt_priority=90,
         animation=None if RL else Animation(
             name="hurt",
             sprite_file_name="Hurt.png"
@@ -102,10 +111,12 @@ available_actions: Dict[ActionType, ActionData] = {
     ),
     ActionType.RIPOSTE: ActionData(
         action_type=ActionType.RIPOSTE,
+        interrupt_priority=50,
         animation=None if RL else Animation(
             name="riposte",
             sprite_file_name="Prick.png"
         ),
+        alternatives={ ActionType.ATTACK_1, },
         frame_events={
             3: (
                 Event(Events.RIPOSTE),
@@ -117,10 +128,12 @@ available_actions: Dict[ActionType, ActionData] = {
     ),
     ActionType.DEFENSE: ActionData(
         action_type=ActionType.DEFENSE,
+        interrupt_priority=50,
         animation=None if RL else Animation(
             name="defense",
             sprite_file_name="Defense.png"
         ),
+        requestable=True,
         frame_events={
             0: (
                 Event(Events.BLOCK),
@@ -135,6 +148,7 @@ available_actions: Dict[ActionType, ActionData] = {
             name="dead",
             sprite_file_name="Dead.png",
         ),
+        interrupt_priority=100,
         frame_events={
             3: (
                 Event(Events.DEAD),

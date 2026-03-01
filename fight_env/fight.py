@@ -41,20 +41,11 @@ class Fight:
         self.fighter1.resolve_next_action()
         self.fighter2.resolve_next_action()
 
-        fighter1_stunned = (
-            self.fighter1.action_candidate == ActionType.STUN
-            or (self.fighter1.current_action == ActionType.STUN and self.fighter1.action_candidate == ActionType.NONE)
-        )
-        fighter2_stunned = (
-            self.fighter2.action_candidate == ActionType.STUN
-            or (self.fighter2.current_action == ActionType.STUN and self.fighter2.action_candidate == ActionType.NONE)
-        )
+        if self.fighter1.current_action == ActionType.STUNNED:
+            self.fighter2.request_alternative(ActionType.RIPOSTE)
 
-        if fighter1_stunned and self.fighter2.action_candidate == ActionType.ATTACK_1:
-            self.fighter2.action_candidate = ActionType.RIPOSTE
-
-        if fighter2_stunned and self.fighter1.action_candidate == ActionType.ATTACK_1:
-            self.fighter1.action_candidate = ActionType.RIPOSTE
+        if self.fighter2.current_action == ActionType.STUNNED:
+            self.fighter1.request_alternative(ActionType.RIPOSTE)
 
         self.fighter1.apply_action()
         self.fighter2.apply_action()

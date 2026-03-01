@@ -78,11 +78,11 @@ class Render:
         logs = logger.get(limit=50, tags={self.bot.state.name, self.player.state.name})
         lines = [log.body for log in logs if self.player.state.name in log.tags]
         last_10 = lines[-14:]  # take last 10 entries
-        player_text = font.render("\n".join(last_10), True, (200, 200, 200))
+        player_text = font.render("\r\n".join(last_10), True, (200, 200, 200))
 
         lines = [log.body for log in logs if self.bot.state.name in log.tags]
         last_10 = lines[-14:]  # take last 10 entries
-        bot_text = font.render("\n".join(last_10), True, (200, 200, 200))
+        bot_text = font.render("\r\n".join(last_10), True, (200, 200, 200))
 
         # Health and stamina bars
         bar_w = 150

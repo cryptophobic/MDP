@@ -1,7 +1,6 @@
 from typing import Optional
 import pygame
 
-from fight_env.actions import ActionType
 from fight_env.state import State
 
 class Fighter:
