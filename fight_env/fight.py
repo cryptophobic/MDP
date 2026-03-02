@@ -41,6 +41,7 @@ class Fight:
 
         f1_res, f2_res = resolve_fighters(fighter1_event, fighter2_event)
         f2_res2, f1_res2 = resolve_fighters(fighter2_event, fighter1_event)
+
         self.fighter1.process_response(f1_res)
         self.fighter1.process_response(f1_res2)
         self.fighter2.process_response(f2_res)
