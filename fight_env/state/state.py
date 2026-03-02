@@ -68,6 +68,10 @@ class State:
 
         return self.stats.get_event(current_event_type)
 
+    def apply_resources(self) -> None:
+        self.hp = self.hp_candidate
+        self.stamina = self.stamina_candidate
+
     def resolve_next_action(self) -> None:
         if self.is_dead:
             return
@@ -82,9 +86,6 @@ class State:
         self._process_player_action()
 
     def apply_action(self) -> None:
-        self.hp = self.hp_candidate
-        self.stamina = self.stamina_candidate
-
         self.current_action_frame += 1
         action_data = self.get_current_action()
         if action_data.loop and self.current_action_frame >= states[self.current_action].frame_count:

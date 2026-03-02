@@ -60,7 +60,7 @@ resolution_table: ResolutionTable = {
         )
     ],
 
-    (Events.ATTACK, Events.NONE): [
+    (Events.ATTACK, Events.ANY): [
         Rule(
             when=lambda a, b: True,
             emit=lambda a, b: (resolution(Responses.HAS_ATTACKED, a.value),
