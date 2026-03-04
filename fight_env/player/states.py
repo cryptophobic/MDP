@@ -41,9 +41,11 @@ class StateData:
 
     interruptible: bool = False
 
+STATE_UNINITIALISED = -1
+
 @dataclass
 class StateTimeline:
-    frame_number: int = 0
+    frame_number: int = STATE_UNINITIALISED
     start_frame_number: int = 0
     duration: int = 0
     loop: bool = False
@@ -76,6 +78,7 @@ states_data: Dict[FighterState, StateData] = {
         base_stamina_cost_frame=-BASE_STAMINA_RESTORE_VALUE_PER_TICK,
         duration=0,
         loop=True,
+        events={0: (Events.STUNNED,)},
     ),
     FighterState.HURT: StateData(
         state_type=FighterState.HURT,
@@ -90,7 +93,10 @@ states_data: Dict[FighterState, StateData] = {
         priority=50,
         base_stamina_cost=2,
         duration=4,
-        events={ 2: (Events.ATTACK,) }
+        events={
+            0: (Events.ATTACK_STARTED,),
+            2: (Events.ATTACK,)
+        }
     ),
     FighterState.PARRY: StateData(
         state_type=FighterState.PARRY,

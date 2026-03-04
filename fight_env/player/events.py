@@ -17,6 +17,7 @@ class Responses(IntEnum):
     HAS_BEEN_RIPOSTED = 10
     HAS_DEFENSE_BROKEN = 11
     HAS_BEEN_DEFENSE_BROKEN = 12
+    HAS_RIPOSTE_WINDOW_OPEN = 13
 
 class Events(IntEnum):
     NONE = 0
@@ -26,6 +27,8 @@ class Events(IntEnum):
     DEAD = 4
     ANY = 6
     CRITICAL_ATTACK = 7
+    STUNNED = 8
+    ATTACK_STARTED = 9
 
 @dataclass(frozen=True)
 class Event:
@@ -53,6 +56,12 @@ def resolution(t: Responses, v: int = 0) -> Response:
     return Response(t, v)
 
 resolution_table: ResolutionTable = {
+    (Events.STUNNED, Events.ANY): [
+        Rule(
+            when=lambda a, b: True,
+            emit=lambda a, b: (resolution(Responses.NONE), resolution(Responses.HAS_RIPOSTE_WINDOW_OPEN)),
+        )
+    ],
     (Events.DEAD, Events.ANY): [
         Rule(
             when=lambda a, b: True,
