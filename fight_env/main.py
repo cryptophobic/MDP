@@ -4,6 +4,7 @@ from fight_env.fight import Fight
 from fight_env.inventory.armour import Armour, ArmourTypes
 from fight_env.inventory.shields import Shields
 from fight_env.inventory.weapons import Weapons
+from fight_env.ticker import ticker
 from fight_env.ui.render import Render
 from fight_env.state.state import State
 from config import RL
@@ -13,6 +14,7 @@ import pygame
 
 class FightingGame:
     def __init__(self):
+
         self.fighter1 = State(name="fighter1")
         self.fighter1.stats.armour = ArmourTypes.LIGHT_ARMOUR
         self.fighter1.stats.shield = Shields.BUCKLER
@@ -35,6 +37,7 @@ class FightingGame:
                 self.render.handle_input()
                 dt = time.perf_counter()
                 if (dt * 1000) > threshold:
+                    ticker.tick()
                     threshold += FRAME_DURATION
                     self.aggressive_bot.next_move()
                     self.fight.update_state()
