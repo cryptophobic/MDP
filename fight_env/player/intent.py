@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 
-from fight_env.player.actions import ActionType
-
+class ActionType(IntEnum):
+    NONE = 0
+    ATTACK = 1
+    BLOCK = 2
+    PARRY = 3
 
 @dataclass(frozen=True)
 class Intent:

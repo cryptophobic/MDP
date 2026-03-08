@@ -12,7 +12,6 @@ class PlayerModel:
     state: FighterState = FighterState.NONE
     state_next: FighterState = FighterState.NONE
     stamina_cost_frame: int = 0
-    stamina_cost_state: int = 0
     timeline: Optional[StateTimeline] = None
 
     is_dead: bool = False
@@ -23,7 +22,15 @@ class PlayerModel:
     hp_next: int = 0
     stamina_next: int = 0
 
-    def enter_state(self, state: FighterState):
+    def apply_state_next(self):
+        if self.state_next != FighterState.NONE:
+            self._enter_state(self.state_next)
+            self.state_next = FighterState.NONE
+
+    def apply_stamina_costs(self):
+        self.stamina_next -= self.stamina_cost_frame
+
+    def _enter_state(self, state: FighterState):
         self.state = state
         state_data = states_data[state]
         self.timeline = StateTimeline(
@@ -33,7 +40,7 @@ class PlayerModel:
             loop=state_data.loop
         )
 
-        self.stamina_cost_state = state_data.base_stamina_cost
+        self.stamina_next -= state_data.base_stamina_cost
         self.stamina_cost_frame = state_data.base_stamina_cost_frame
 
     def finalise_last_frame(self):
@@ -43,12 +50,6 @@ class PlayerModel:
         if self.state_next != FighterState.NONE:
             self.enter_state(self.state_next)
 
-    def start_new_frame(self):
-        if self.timeline.frame_number == STATE_UNINITIALISED:
-            self.stamina_next -= self.stamina_cost_state
-
-        self.timeline.tick()
-        self.stamina_next -= self.stamina_cost_frame
 
     def process_incoming_events(self, response: Response):
         if response.type == Responses.DEAD:
