@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from enum import IntEnum
+
 
 class ActionType(IntEnum):
     NONE = 0

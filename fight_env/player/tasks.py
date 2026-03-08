@@ -6,7 +6,7 @@ from fight_env.config import BASE_STAMINA_RESTORE_VALUE_PER_TICK
 from fight_env.player.events import Events
 
 
-class FighterState(IntEnum):
+class FighterTask(IntEnum):
     NONE = 0
     IDLE = 1
     ATTACK_1 = 2
@@ -29,8 +29,8 @@ class FighterState(IntEnum):
 TimelineEvents = Dict[int, Tuple[Events]]
 
 @dataclass
-class StateData:
-    state_type: FighterState
+class TaskData:
+    task_type: FighterTask
     priority: int = 0
     base_stamina_cost: int = 0
     base_stamina_cost_frame: int = 0
@@ -41,11 +41,11 @@ class StateData:
 
     interruptible: bool = False
 
-STATE_UNINITIALISED = -1
+TASK_UNINITIALISED = -1
 
 @dataclass
-class StateTimeline:
-    frame_number: int = STATE_UNINITIALISED
+class TaskTimeline:
+    frame_number: int = TASK_UNINITIALISED
     start_frame_number: int = 0
     duration: int = 0
     loop: bool = False
@@ -62,34 +62,34 @@ class StateTimeline:
         return self.frame_number >= self.duration
 
 
-states_data: Dict[FighterState, StateData] = {
+tasks_data: Dict[FighterTask, TaskData] = {
     # Top level
-    FighterState.DEAD: StateData(
-        state_type=FighterState.DEAD,
+    FighterTask.DEAD: TaskData(
+        task_type=FighterTask.DEAD,
         priority=100,
         duration=5,
         events={3: (Events.DEAD,)}
     ),
 
     # System level
-    FighterState.STUNNED: StateData(
-        state_type=FighterState.STUNNED,
+    FighterTask.STUNNED: TaskData(
+        task_type=FighterTask.STUNNED,
         priority=50,
         base_stamina_cost_frame=-BASE_STAMINA_RESTORE_VALUE_PER_TICK,
         duration=0,
         loop=True,
         events={0: (Events.STUNNED,)},
     ),
-    FighterState.HURT: StateData(
-        state_type=FighterState.HURT,
+    FighterTask.HURT: TaskData(
+        task_type=FighterTask.HURT,
         priority=90,
         base_stamina_cost=2,
         duration=2
     ),
 
     # User level
-    FighterState.ATTACK_1: StateData(
-        state_type=FighterState.ATTACK_1,
+    FighterTask.ATTACK_1: TaskData(
+        task_type=FighterTask.ATTACK_1,
         priority=50,
         base_stamina_cost=2,
         duration=4,
@@ -98,30 +98,30 @@ states_data: Dict[FighterState, StateData] = {
             2: (Events.ATTACK,)
         }
     ),
-    FighterState.PARRY: StateData(
-        state_type=FighterState.PARRY,
+    FighterTask.PARRY: TaskData(
+        task_type=FighterTask.PARRY,
         priority=50,
         base_stamina_cost=2,
         duration=4,
         events={ 1: (Events.PARRY,) },
     ),
-    FighterState.RIPOSTE: StateData(
-        state_type=FighterState.RIPOSTE,
+    FighterTask.RIPOSTE: TaskData(
+        task_type=FighterTask.RIPOSTE,
         priority=50,
         base_stamina_cost=2,
         duration=5,
         events={ 3: (Events.CRITICAL_ATTACK,)}
     ),
-    FighterState.DEFENSE: StateData(
-        state_type=FighterState.DEFENSE,
+    FighterTask.DEFENSE: TaskData(
+        task_type=FighterTask.DEFENSE,
         priority=50,
         duration=1,
         events={ 0: (Events.BLOCK,) }
     ),
 
     # Fallback
-    FighterState.IDLE: StateData(
-        state_type=FighterState.IDLE,
+    FighterTask.IDLE: TaskData(
+        task_type=FighterTask.IDLE,
         base_stamina_cost_frame=-BASE_STAMINA_RESTORE_VALUE_PER_TICK,
         interruptible=True,
         duration=0,
