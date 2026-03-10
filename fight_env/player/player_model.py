@@ -3,11 +3,12 @@ from typing import Optional
 
 from fight_env.player.events import Response, Responses
 from fight_env.player.tasks import FighterTask, TaskTimeline, tasks_data, TASK_UNINITIALISED
+from fight_env.protocols.state_protocol import StateProtocol
 from fight_env.ticker import ticker
 
 
 @dataclass
-class PlayerModel:
+class PlayerModel(StateProtocol):
 
     task: FighterTask = FighterTask.NONE
     state_next: FighterTask = FighterTask.NONE

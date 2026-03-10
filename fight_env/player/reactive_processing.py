@@ -5,8 +5,10 @@
 4. Exit HURT
 4. Enter DEAD
 """
-from fight_env.player.player_model import PlayerModel
+from fight_env.protocols.state_protocol import StateProtocol
 
 
-def react_on(currentState: PlayerModel, ) -> None:
+def react_on(currentState: StateProtocol, lastSnapshot: StateProtocol) -> None:
+    if currentState.hp <= 0:
+
     pass

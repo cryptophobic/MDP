@@ -1,9 +1,9 @@
-from fight_env.player.player_model import PlayerModel
 from fight_env.player.tasks import FighterTask, tasks_data, TaskTimeline, TASK_UNINITIALISED
+from fight_env.protocols.state_protocol import StateProtocol
 from fight_env.ticker import ticker
 
 
-def enter_task(model: PlayerModel, task: FighterTask):
+def enter_task(model: StateProtocol, task: FighterTask):
     model.task = task
     task_data = tasks_data[task]
     model.timeline = TaskTimeline(
@@ -16,7 +16,7 @@ def enter_task(model: PlayerModel, task: FighterTask):
     model.stamina -= task_data.base_stamina_cost
     model.stamina_cost_frame = task_data.base_stamina_cost_frame
 
-def process_current_task(model: PlayerModel):
+def process_current_task(model: StateProtocol):
     if model.task == FighterTask.NONE:
         return
 
