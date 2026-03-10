@@ -5,6 +5,8 @@
 4. Exit HURT
 4. Enter DEAD
 """
-class ReactiveStates:
-    def __init__(self):
-        pass
+from fight_env.player.player_model import PlayerModel
+
+
+def react_on(currentState: PlayerModel, ) -> None:
+    pass

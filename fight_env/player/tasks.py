@@ -55,11 +55,11 @@ class TaskTimeline:
         if self.loop:
             self.frame_number %= self.duration
 
-        return self.expired
+        return not self.expired
 
     @property
     def expired(self) -> bool:
-        return self.frame_number >= self.duration
+        return not self.loop and self.frame_number >= self.duration
 
 
 tasks_data: Dict[FighterTask, TaskData] = {
@@ -126,5 +126,8 @@ tasks_data: Dict[FighterTask, TaskData] = {
         interruptible=True,
         duration=0,
         loop=True,
+    ),
+    FighterTask.NONE: TaskData(
+        task_type=FighterTask.NONE,
     )
 }
