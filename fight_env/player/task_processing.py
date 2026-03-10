@@ -3,25 +3,37 @@ from fight_env.protocols.state_protocol import StateProtocol
 from fight_env.ticker import ticker
 
 
-def enter_task(model: StateProtocol, task: FighterTask):
-    model.task = task
-    task_data = tasks_data[task]
-    model.timeline = TaskTimeline(
-        start_frame_number=ticker.state,
-        frame_number=TASK_UNINITIALISED,
-        duration=task_data.duration,
-        loop=task_data.loop
-    )
+class TaskProcessing:
 
-    model.stamina -= task_data.base_stamina_cost
-    model.stamina_cost_frame = task_data.base_stamina_cost_frame
+    @classmethod
+    def choose_task(cls, model: StateProtocol, taskset: set[FighterTask]):
+        pass
 
-def process_current_task(model: StateProtocol):
-    if model.task == FighterTask.NONE:
-        return
+    @classmethod
+    def set_task(cls, model: StateProtocol, task: FighterTask):
+        model.task = task
+        task_data = tasks_data[task]
+        model.timeline = TaskTimeline(
+            start_frame_number=ticker.state,
+            frame_number=ticker.state,
+            duration=task_data.duration,
+            loop=task_data.loop
+        )
 
-    if not model.timeline.expired and model.timeline.tick():
-        model.stamina -= model.stamina_cost_frame
-    else:
-        enter_task(model, FighterTask.NONE)
+        model.stamina -= task_data.base_stamina_cost
+        model.stamina_cost_frame = task_data.base_stamina_cost_frame
+
+    @classmethod
+    def process_current_task(cls, model: StateProtocol):
+        if ticker.state == cls._processed:
+            return
+
+        if model.task == FighterTask.NONE:
+            pass
+        elif not model.timeline.expired and model.timeline.tick():
+            model.stamina -= model.stamina_cost_frame
+        else:
+            cls.set_task(model, FighterTask.NONE)
+
+        cls._processed = ticker.state
 

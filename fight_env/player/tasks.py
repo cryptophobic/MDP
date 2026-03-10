@@ -41,25 +41,24 @@ class TaskData:
 
     interruptible: bool = False
 
-TASK_UNINITIALISED = -1
-
 @dataclass
 class TaskTimeline:
-    frame_number: int = TASK_UNINITIALISED
+    frame_number: int = 0
     start_frame_number: int = 0
     duration: int = 0
     loop: bool = False
 
-    def tick(self) -> bool:
-        self.frame_number += 1
-        if self.loop:
-            self.frame_number %= self.duration
+    @property
+    def frame_offset(self) -> int:
+        offset = self.frame_number - self.start_frame_number
+        return offset if self.loop else offset % self.duration
 
-        return not self.expired
+    def tick(self):
+        self.frame_number += 1
 
     @property
     def expired(self) -> bool:
-        return not self.loop and self.frame_number >= self.duration
+        return self.frame_offset >= self.duration
 
 
 tasks_data: Dict[FighterTask, TaskData] = {

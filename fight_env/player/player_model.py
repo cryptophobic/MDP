@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from fight_env.player.events import Response, Responses
+from fight_env.player.stats import Stats
 from fight_env.player.tasks import FighterTask, TaskTimeline, tasks_data, TASK_UNINITIALISED
 from fight_env.protocols.state_protocol import StateProtocol
 from fight_env.ticker import ticker
@@ -14,6 +15,7 @@ class PlayerModel(StateProtocol):
     state_next: FighterTask = FighterTask.NONE
     stamina_cost_frame: int = 0
     timeline: Optional[TaskTimeline] = field(default_factory=TaskTimeline)
+    stats: Stats = field(default_factory=Stats)
 
     is_dead: bool = False
 
