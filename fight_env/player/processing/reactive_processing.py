@@ -5,7 +5,7 @@
 4. Exit HURT
 4. Enter DEAD
 """
-from fight_env.player import task_processing
+from fight_env.player.processing import task_processing
 from fight_env.player.tasks import FighterTask
 from fight_env.protocols.state_protocol import StateProtocol
 

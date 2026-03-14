@@ -3,6 +3,23 @@ from fight_env.inventory.shields import Shield, shields, Shields
 from fight_env.inventory.weapons import Weapon, weapons, Weapons
 from functools import wraps
 
+from fight_env.player.events import Events, Event
+from fight_env.player.tasks import TaskData
+
+def materialize_event(raw_event: Events, stats: Stats) -> Event:
+      value_map = {
+          Events.ATTACK: lambda: stats.damage_value,
+          Events.CRITICAL_ATTACK: lambda: stats.critical_damage_value,
+          Events.BLOCK: lambda: stats.shield.defense,
+      }
+      return Event(raw_event, value_map.get(raw_event, 0))
+
+def calc_stamina_cost_enter_task(task_data: TaskData, stats: Stats) -> int:
+    return task_data.base_stamina_cost + stats.base_stamina_expense if task_data else 0
+
+def calc_stamina_cost_frame(task_data: TaskData, stats: Stats) -> int:
+    return task_data.base_stamina_cost_frame + stats.base_stamina_expense if task_data else 0
+
 def lazy_recalc(method):
     @wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -77,8 +94,12 @@ class Stats:
 
     def _update_values(self):
         self._weight = self.armour.weight + self.shield.weight + self.weapon.weight
-        self._stamina_restore_value = BASE_STAMINA_RESTORE_VALUE_PER_FRAME
+        # self._stamina_restore_value = BASE_STAMINA_RESTORE_VALUE_PER_FRAME
         self._base_stamina_expense = self._weight // 5
+
+    @property
+    def base_stamina_expense(self) -> int:
+        return self._base_stamina_expense
 
     @property
     @lazy_recalc
@@ -94,8 +115,10 @@ class Stats:
     def weight(self) -> int:
         return self._weight
 
+    @property
     def damage_value(self) -> int:
         return self.weapon.base_damage
 
+    @property
     def critical_damage_value(self) -> int:
         return self.weapon.critical_damage

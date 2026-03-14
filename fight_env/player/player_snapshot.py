@@ -6,3 +6,8 @@ class PlayerSnapshot(StateProtocol):
     hp: int
     stamina: int
     task: FighterTask
+
+    def __init__(self, model):
+        self.hp = model.hp
+        self.stamina = model.stamina
+        self.task = model.task

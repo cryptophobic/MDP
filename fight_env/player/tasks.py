@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Dict, Tuple, Optional
+from typing import Dict, List
 
 from fight_env.config import BASE_STAMINA_RESTORE_VALUE_PER_TICK
 from fight_env.player.events import Events
@@ -26,7 +26,7 @@ class FighterTask(IntEnum):
     WALK = 16
 
 
-TimelineEvents = Dict[int, Tuple[Events]]
+TimelineEvents = Dict[int, Events]
 
 @dataclass
 class TaskData:
@@ -47,11 +47,16 @@ class TaskTimeline:
     start_frame_number: int = 0
     duration: int = 0
     loop: bool = False
+    events: TimelineEvents = field(default_factory=dict)
 
     @property
     def frame_offset(self) -> int:
         offset = self.frame_number - self.start_frame_number
         return offset if self.loop else offset % self.duration
+
+    @property
+    def current_event(self) -> Events:
+        return self.events.get(self.frame_number, Events.NONE)
 
     def tick(self):
         self.frame_number += 1
@@ -67,7 +72,7 @@ tasks_data: Dict[FighterTask, TaskData] = {
         task_type=FighterTask.DEAD,
         priority=100,
         duration=5,
-        events={3: (Events.DEAD,)}
+        events={3: Events.DEAD},
     ),
 
     # System level
@@ -75,9 +80,9 @@ tasks_data: Dict[FighterTask, TaskData] = {
         task_type=FighterTask.STUNNED,
         priority=50,
         base_stamina_cost_frame=-BASE_STAMINA_RESTORE_VALUE_PER_TICK,
-        duration=0,
+        duration=1,
         loop=True,
-        events={0: (Events.STUNNED,)},
+        events={0: Events.STUNNED},
     ),
     FighterTask.HURT: TaskData(
         task_type=FighterTask.HURT,
@@ -93,8 +98,8 @@ tasks_data: Dict[FighterTask, TaskData] = {
         base_stamina_cost=2,
         duration=4,
         events={
-            0: (Events.ATTACK_STARTED,),
-            2: (Events.ATTACK,)
+            0: Events.ATTACK_STARTED,
+            2: Events.ATTACK
         }
     ),
     FighterTask.PARRY: TaskData(
@@ -102,20 +107,20 @@ tasks_data: Dict[FighterTask, TaskData] = {
         priority=50,
         base_stamina_cost=2,
         duration=4,
-        events={ 1: (Events.PARRY,) },
+        events={ 1: Events.PARRY },
     ),
     FighterTask.RIPOSTE: TaskData(
         task_type=FighterTask.RIPOSTE,
         priority=50,
         base_stamina_cost=2,
         duration=5,
-        events={ 3: (Events.CRITICAL_ATTACK,)}
+        events={ 3: Events.CRITICAL_ATTACK }
     ),
     FighterTask.DEFENSE: TaskData(
         task_type=FighterTask.DEFENSE,
         priority=50,
         duration=1,
-        events={ 0: (Events.BLOCK,) }
+        events={ 0: Events.BLOCK }
     ),
 
     # Fallback
@@ -123,10 +128,12 @@ tasks_data: Dict[FighterTask, TaskData] = {
         task_type=FighterTask.IDLE,
         base_stamina_cost_frame=-BASE_STAMINA_RESTORE_VALUE_PER_TICK,
         interruptible=True,
-        duration=0,
+        duration=1,
         loop=True,
     ),
     FighterTask.NONE: TaskData(
         task_type=FighterTask.NONE,
+        interruptible=True,
+        priority=-1,
     )
 }
