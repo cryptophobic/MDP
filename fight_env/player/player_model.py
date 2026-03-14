@@ -3,7 +3,7 @@ from typing import Optional
 
 from fight_env.player.events import Response, Responses
 from fight_env.player.stats import Stats
-from fight_env.player.tasks import FighterTask, TaskTimeline, tasks_data, TASK_UNINITIALISED
+from fight_env.player.tasks import FighterTask, TaskTimeline, tasks_data
 from fight_env.protocols.state_protocol import StateProtocol
 from fight_env.ticker import ticker
 
@@ -21,9 +21,6 @@ class PlayerModel(StateProtocol):
 
     hp: int = 0
     stamina: int = 0
-
-    hp_next: int = 0
-    stamina_next: int = 0
 
     def apply_state_next(self):
         if self.state_next != FighterTask.NONE:

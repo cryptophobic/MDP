@@ -1,173 +1,159 @@
-### start_new_frame (player scope)
- - frame_number++
- - apply stamina_cost_state to stamina_next if state_just_started
- - apply stamina_cost_frame to stamina_next
+# Fight Environment Architecture
 
-### events_processing (fight scope)
- - apply rules ATTACK vs BLOCK, ATTACK vs NONE etc, ATTACK vs STUNNED
- - Don't want overcomplicate here. But currently have no idea how to make it elegant. Upgrade to RIPOSTE 
-So if attack has already been started we want to replace it here silently, assumming there wouldn't be some extra events on frame=0
-So common sense tells me ATTACK to RIPOSTE upgrade should be happened in user_input_processing 
+## Overview
 
-### events_resolution_response_processing (player scope)
- - adjust hp_next, stamina_next as possible effect of incoming events
- - Maybe it is time to introduce combos. e.g. certain successfully response opens short window (several frames) for something. e.g. RIPOSTE
-so currently stunned state configured the way it informs every frame about it
-```python
-#file: fight_env/player/states.py
-    FighterState.STUNNED: StateData(
-        state_type=FighterState.STUNNED,
-        priority=50,
-        base_stamina_cost_frame=-BASE_STAMINA_RESTORE_VALUE_PER_TICK,
-        duration=0,
-        loop=True,
-        events={0: (Events.STUNNED,)},
-    ),
+The fight system is a frame-based combat simulation. Each frame follows a strict pipeline.
+`PlayerModel` is a pure data container — all logic lives in stateless processing functions.
+The outside world (renderer, gym env, bots) only sees frozen `PlayerSnapshot`s produced at the end of each frame.
+
+## Core Types
+
+### PlayerModel (mutable, internal)
+Pure data container, no methods. Processors read/write it during a frame.
+
+Fields:
+- `stats: Stats` — equipment-derived values
+- `hp: int`, `stamina: int` — current resources
+- `task: FighterTask` — active task (IDLE, ATTACK_1, HURT, STUNNED, DEAD, etc.)
+- `timeline: TaskTimeline` — tracks frame offset, duration, loop, expiry
+- `stamina_cost_per_frame: int` — ongoing drain from current task
+- `requested_task: FighterTask` — player input buffer
+- `is_dead: bool`
+
+### PlayerSnapshot (frozen, external)
+Immutable output of a frame. All external consumers use this.
+
+Fields:
+- `hp`, `stamina`, `task`, `frame_offset`, `is_dead`
+- `responses: tuple[Response, ...]` — combat responses received this frame
+
+### TaskData (static definition)
+Defines a task's properties: `priority`, `duration`, `loop`, `interruptible`,
+`base_stamina_cost` (one-time on entry), `base_stamina_cost_frame` (per-frame drain),
+`events: Dict[int, Tuple[Events]]` (what events fire at which frame offsets).
+
+### TaskTimeline (runtime state)
+Tracks progress through a task: `frame_offset`, `duration`, `loop`, `expired`.
+For looped tasks, frame_offset wraps for event lookup but the raw counter does not reset,
+ensuring entry cost is applied only once.
+
+## Frame Lifecycle Pipeline
+
+Each frame executes these phases in order:
+
 ```
- - And in resolution table we could config something like this
-```python
-#file: fight_env/player/events.py
-    (Events.STUNNED, Events.ANY): [
-        Rule(
-            when=lambda a, b: True,
-            emit=lambda a, b: (resolution(Responses.NONE), resolution(Responses.HAS_RIPOSTE_WINDOW_OPEN)),
-        )
-    ],
-```
+Phase A — Task Resolution (uses previous frame's snapshot):
 
-### process_reactive_states (player scope)
- - set state_candidate as possible effect of incoming events (stunned, hurt, dead, combo)
- - set state_candidate as possible effect of stamina, hp updates (e.g. stun -> idle if stunned and stamina_next is above threshold)
+  1. tick(model)
+     - If first frame of task: apply base_stamina_cost
+     - Apply base_stamina_cost_frame
+     - Advance timeline
 
-### user_input_processing (player scope)
- - resolve user_intent to user_state_candidate. This resolving should take into account HAS_RIPOSTE_WINDOW_OPEN
- - set state_candidate from user_state_candidate
+  2. Fallback
+     - If timeline expired -> try_transition(model, IDLE)
 
-### timeline_processing (player scope)
- - check state expiring
- - calculate timeline_state_candidate if expired
- - set state_candidate from timeline_state_candidate
+  3. Intent + Combo Upgrade
+     - Read player input (requested_task)
+     - Run combo_upgrade(intent, prev_snapshot.responses) to potentially upgrade
+       (e.g. ATTACK_1 + HAS_RIPOSTE_WINDOW_OPEN -> RIPOSTE)
+     - try_transition(model, upgraded_intent)
 
-### finalise_frame (player scope)
- - resolve candidates according to prio (every state has prio DEAD above the HURT, HURT above the STUN, STUN the same as user_states etc...)
- - IMPORTANT: frame_number of new state is set to -1 (uninitialised). So state becomes active at the beginning of ther loop
- - set hp=hp_next
- - set stamina=stamina_next
- - set state=state_candidate
+  4. Reactive
+     - Compare model state against previous snapshot
+     - hp <= 0 -> try_transition(DEAD)
+     - hp < prev_snapshot.hp -> try_transition(HURT)
+     - stamina <= 0 -> try_transition(STUNNED)
 
+Phase B — Combat:
 
-## Claude's suggestion
+  5. Event Generation
+     - Read current task's events at current frame_offset
+     - Stats convert event type to Event with value (e.g. ATTACK -> damage from weapon)
 
-  Gaps / corrections                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
-  1. Event emission is implicit but needs a step. After start_new_frame ticks the timeline, the fight loop needs to read each player's current events. Your StateData.events dict keyed by frame_number handles this, but it needs an explicit method. It's the bridge between phase 1 and 2.                                                                                                                                                                                           
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
-  2. Response accumulation. Phase 2 (fight scope) can produce multiple responses per player per frame — your current Fight.resolve_combat already does this (f1_res + f1_res2). The combo resolver in phase 5 needs access to all of them. So process_responses should accumulate into a list that the combo resolver reads, not just apply hp/stamina and forget.                                                                                                                    
+  6. Combat Resolution
+     - Resolve (event_p1, event_p2) through resolution_table
+     - Produces Response pairs for each player
 
-  3. Intent-to-state default mapping. ActionType.ATTACK → FighterState.ATTACK_1, ActionType.BLOCK → FighterState.DEFENSE, etc. The combo resolver upgrades this, but you need the base mapping too. Without it phase 5 has no way to go from user intent to state candidate.
+  7. Response Processing
+     - Apply responses: modify hp, stamina based on response type and stats
+     - (e.g. HAS_BEEN_ATTACKED -> hp loss, HAS_BEEN_PARRIED -> instant stun)
 
-  4. Candidate collection strategy. Phases 4, 5, 6 all produce candidates. I'd suggest appending to a candidates: list[FighterState] rather than doing inline priority resolution. Phase 7 picks the highest priority from the list. Simpler to debug than the old _set_action_candidate chain — you can inspect exactly what each phase proposed.
-
-  5. The STUNNED → RIPOSTE flow works end-to-end without fight-scope hacks. Just confirming: STUNNED loops frame 0 → emits Events.STUNNED every frame → resolution table gives opponent HAS_RIPOSTE_WINDOW_OPEN → combo resolver upgrades ATTACK → RIPOSTE. The old request_alternative() in Fight disappears. Clean.
-
-  Proposed file structure
-```
-  fight_env/player/
-  ├── actions.py            # ActionType enum + intent-to-state default mapping
-  ├── intent.py             # Intent dataclass (action + TTL for input buffering)
-  ├── states.py             # FighterState, StateData, StateTimeline, states_data
-  ├── events.py             # Events, Responses, Event, Response, Rule, resolution_table
-  ├── reactive.py           # reactive_rules list: (condition, FighterState)
-  ├── combos.py             # ComboResolver: response window buffer + upgrade rules
-  ├── player_model.py       # PlayerModel: pure data, no logic
-  ├── player.py             # Player: thin pipeline coordinator
-  └── animations.py         # FighterState → Animation
-
-  fight_env/
-  ├── fight.py              # Fight: game loop orchestrator, event resolution
+  8. Snapshot
+     - Freeze model state + responses into PlayerSnapshot
+     - This snapshot is used by next frame's Phase A and by all external consumers
 ```
 
-  Role of each file
+## Task Transition — try_transition
 
-  player_model.py — Pure data bag. No methods beyond trivial accessors. This is how you prevent the god object:
-```python
-  @dataclass
-  class PlayerModel:
-      state: FighterState
-      timeline: StateTimeline
-      hp: int
-      hp_next: int
-      stamina: int
-      stamina_next: int
-      candidates: list[FighterState]       # phases 4,5,6 append here
-      frame_responses: list[Response]       # phase 3 accumulates here
+Called multiple times per frame (fallback, intent, reactive). Does NOT apply stamina costs.
+Transition succeeds if:
+- Candidate priority > current task priority, OR
+- Equal priority AND current task is interruptible
+
+The last successful transition wins. Stamina costs are deferred to tick() on the next frame's
+first-frame check.
+
 ```
-  player.py — Thin coordinator. Owns a PlayerModel + ComboResolver. Each pipeline method is 5-10 lines because heavy logic lives in the rule modules:
-
-```python
-  class Player:
-      model: PlayerModel
-      combo: ComboResolver
-
-      def start_new_frame(self)          # tick timeline, apply stamina costs
-      def get_current_events(self)       # read StateData.events[frame_number]
-      def process_responses(self, rs)    # apply hp/stamina, feed combo buffer
-      def process_reactive(self)         # iterate reactive_rules → append candidates
-      def process_intent(self, intent)   # combo.resolve(intent) → append candidate
-      def process_timeline(self)         # check expiration → append candidate
-      def finalise(self)                 # pick highest-prio candidate, commit state/hp/stamina
+try_transition(model, candidate_task):
+    if candidate can interrupt current:
+        model.task = candidate_task
+        model.timeline = new TaskTimeline(...)
+        return True
+    return False
 ```
 
-  reactive.py — Data-driven rules, no class needed:
+## Inter-Player Communication
 
-```python
-  reactive_rules: list[tuple[Callable[[PlayerModel], bool], FighterState]] = [
-      (lambda m: m.hp_next <= 0,              FighterState.DEAD),
-      (lambda m: m.hp_next < m.hp,            FighterState.HURT),
-      (lambda m: m.stamina_next <= 0,         FighterState.STUNNED),
-      (lambda m: m.state == FighterState.STUNNED
-             and m.stamina_next >= threshold,  FighterState.IDLE),
-  ]
+Players communicate exclusively through the event/response system. No direct model inspection.
+
+### Event Resolution Table (events.py)
+Maps (my_event, opponent_event) pairs to response pairs via rules:
+
 ```
-  combos.py — Tracks response history with TTLs, upgrades intents:
-
-```python
-  @dataclass
-  class ComboRule:
-      trigger: Responses          # what must be in the buffer
-      intent: ActionType          # what user is trying to do
-      result: FighterState        # what it becomes
-      window: int                 # TTL in frames
-
-  combo_rules = [
-      ComboRule(Responses.HAS_RIPOSTE_WINDOW_OPEN, ActionType.ATTACK, FighterState.RIPOSTE, window=1),
-      ComboRule(Responses.HAS_ATTACKED, ActionType.ATTACK, FighterState.ATTACK_2, window=2),
-  ]
-
-  class ComboResolver:
-      buffer: list[WindowEntry]
-
-      def feed(self, responses: list[Response])      # add new, tick TTLs, prune expired
-      def resolve(self, intent: ActionType) -> FighterState  # check rules, fallback to default map
+(ATTACK, ANY)   -> (HAS_ATTACKED, HAS_BEEN_ATTACKED)
+(ATTACK, PARRY) -> (HAS_BEEN_PARRIED, HAS_PARRIED)      # more specific key wins
+(ATTACK, BLOCK) -> conditional on attack vs defense value
+(STUNNED, ANY)  -> (NONE, HAS_RIPOSTE_WINDOW_OPEN)
+(DEAD, ANY)     -> (DEAD, WON)
 ```
 
-  fight.py — The only place that sees both players:
+### Combo Resolution Table (combos.py)
+Maps (my_intent, received_response) to upgraded task via rules.
+Same pattern as event resolution:
 
-```python
-  class Fight:
-      def step(self):
-          for p in players: p.start_new_frame()
-
-          events = [p.get_current_events() for p in players]
-          # resolve events pairwise → responses
-
-          for p, resps in zip(players, resolved):
-              p.process_responses(resps)
-              p.process_reactive()
-              p.process_intent(intents[p])
-              p.process_timeline()
-              p.finalise()
 ```
-  Why this prevents the god object
+(ATTACK_1, HAS_RIPOSTE_WINDOW_OPEN) -> RIPOSTE
+```
 
-  The logic that used to live in State is now spread across data declarations (states_data, reactive_rules, combo_rules, resolution_table) and Player is just a dispatcher that calls them in order. Adding a new mechanic means adding a rule to the right table, not touching Player.
+## Task Definitions (tasks.py)
+
+Organized by priority tier:
+
+- **Top level (100):** DEAD
+- **System level (90):** HURT
+- **System level (50):** STUNNED (loop, emits STUNNED event at frame 0)
+- **User level (50):** ATTACK_1, PARRY, RIPOSTE, DEFENSE
+- **Fallback (0):** IDLE (loop, interruptible), NONE
+
+## File Structure
+
+```
+fight_env/player/
+  player_model.py         # Pure data container
+  player_snapshot.py      # Frozen frame output
+  tasks.py                # FighterTask enum, TaskData definitions, TaskTimeline
+  events.py               # Events, Responses, Event, Response, resolution_table
+  stats.py                # Equipment -> derived values
+  intent_processing.py    # Player input -> requested task
+  combos.py               # Combo upgrade rules: (intent, response) -> upgraded task
+  task_processing.py      # tick(), try_transition(), enter_task()
+  reactive_processing.py  # Resource changes -> forced tasks (HURT/DEAD/STUNNED)
+  response_processing.py  # Combat responses -> resource mutations
+  animations.py           # Task -> Animation mapping (separate from task data)
+  protocols.py            # StateProtocol if still needed
+
+fight_env/
+  fight.py                # Orchestrator: runs the pipeline, holds models + snapshots
+  gym_env.py              # Gymnasium wrapper, reads snapshots
+  main.py                 # Game loop with rendering, reads snapshots
+```
