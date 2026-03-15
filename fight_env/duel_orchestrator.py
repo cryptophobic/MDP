@@ -1,6 +1,5 @@
 from fight_env import duel_resolver
 from fight_env.player.player import Player
-from fight_env.player.refs.events import Responses, Response
 
 
 class DuelOrchestrator:
