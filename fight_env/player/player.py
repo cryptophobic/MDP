@@ -49,7 +49,7 @@ class Player:
         return self._model.current_event
 
     def fallback(self) -> bool:
-        return try_transition(self._model, FighterTask.IDLE)
+        return try_transition(self._model, FighterTask.FIGHTING_STANCE)
 
     def process_intent(self) -> bool:
         task = process_intent(self._model)

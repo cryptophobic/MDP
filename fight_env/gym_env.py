@@ -19,7 +19,7 @@ from fight_env.player.refs.tasks import FighterTask
 # Compact mapping: ActionType -> 0..8 for observation space
 ACTION_TO_IDX = {
     FighterTask.NONE: 0,
-    FighterTask.IDLE: 1,
+    FighterTask.FIGHTING_STANCE: 1,
     FighterTask.ATTACK_1: 2,
     FighterTask.DEFENSE: 3,
     FighterTask.PARRY: 4,

@@ -1,5 +1,6 @@
 from fight_env import duel_resolver
 from fight_env.player.player import Player
+from fight_env.player.refs.events import Responses, Response
 
 
 class DuelOrchestrator:
@@ -30,5 +31,5 @@ class DuelOrchestrator:
 
         self.fighter1.cleanup(f1_fallback_resolved, f1_intent_resolved, f1_reactive_resolved)
         self.fighter2.cleanup(f2_fallback_resolved, f2_intent_resolved, f2_reactive_resolved)
-
+        # return (Response(Responses.NONE), Response(Responses.NONE)), (Response(Responses.NONE), Response(Responses.NONE))
         return f1_responses, f2_responses

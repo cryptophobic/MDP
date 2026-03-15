@@ -8,7 +8,7 @@ from fight_env.player.refs.events import Events
 
 class FighterTask(IntEnum):
     NONE = 0
-    IDLE = 1
+    FIGHTING_STANCE = 1
     ATTACK_1 = 2
     ATTACK_2 = 3
     ATTACK_3 = 4
@@ -24,6 +24,10 @@ class FighterTask(IntEnum):
     RUN = 14
     SHIELD_STRIKE = 15
     WALK = 16
+    IDLE = 17
+    JUMP = 18
+    JUMP_STRIKE = 19
+    BLOW_TO_SHIELD = 20
 
 
 TimelineEvents = Dict[int, Events]
@@ -128,8 +132,8 @@ tasks_data: Dict[FighterTask, TaskData] = {
     ),
 
     # Fallback
-    FighterTask.IDLE: TaskData(
-        task_type=FighterTask.IDLE,
+    FighterTask.FIGHTING_STANCE: TaskData(
+        task_type=FighterTask.FIGHTING_STANCE,
         base_stamina_cost_frame=-BASE_STAMINA_RESTORE_VALUE_PER_TICK,
         interruptible=True,
         duration=1,
