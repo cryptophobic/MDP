@@ -17,7 +17,7 @@ model.learn(total_timesteps=500_000)
 model.save("fight_ppo")
 
 # Evaluate
-action_names = ["NONE", "ATTACK", "DEFENSE", "PARRY"]
+action_names = ["NONE", "ATTACK", "BLOCK", "PARRY"]
 total_wins = 0
 total_losses = 0
 episodes = 50

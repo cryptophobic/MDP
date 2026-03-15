@@ -1,12 +1,10 @@
 from dataclasses import dataclass
-from pathlib import Path
 from typing import List
 
 import pygame
 
-BASE_DIR = Path(__file__).parent
-RESOURCES_DIR = BASE_DIR / "resources" / "Animations"
-FRAME_SIZE = 128
+from fight_env.config import FRAME_DURATION, RESOURCES_DIR, FRAME_SIZE
+
 
 def get_resources_path(file_name: str):
     return RESOURCES_DIR / file_name
@@ -16,11 +14,10 @@ class Animation:
     name: str
     frames: List[pygame.Surface]
     frame_count: int
-    current_action_frame: int
     frame_duration: int  # ms per frame
 
     def __init__(self, name: str, sprite_file_name: str,
-                 frame_size: int = FRAME_SIZE, frame_duration: int = 120):
+                 frame_size: int = FRAME_SIZE, frame_duration: int = FRAME_DURATION):
         sprite_sheet = pygame.image.load(get_resources_path(sprite_file_name))
         frame_count = sprite_sheet.get_width() // frame_size
         self.name = name
