@@ -1,9 +1,9 @@
-from fight_env.player.events import Response, Responses
+from fight_env.config import STAMINA_BOTTOM_LIMIT
+from fight_env.player.refs.events import Response, Responses
 from fight_env.player.player_model import PlayerModel
 from fight_env.player.stats import Stats
 
 INSTANT_STUN = 9999
-STAMINA_BOTTOM_LIMIT = -4
 
 
 def process_response(state: PlayerModel, response: Response) -> None:

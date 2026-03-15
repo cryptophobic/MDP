@@ -1,6 +1,6 @@
 from typing import Tuple, List
 
-from fight_env.player.events import Event, Response, Events, resolution_table, Responses
+from fight_env.player.refs.events import Event, Response, Events, resolution_table, Responses
 
 def _resolve(event1: Event, event2: Event) -> Tuple[Response, Response]:
     for events_tuple in [

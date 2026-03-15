@@ -1,32 +1,35 @@
 import random
+from fight_env.player.player import Player
+from fight_env.player.processing.intent_processing import ActionType
+from fight_env.player.refs.tasks import FighterTask
 
-from fight_env.state.actions import ActionType
-from fight_env.state.state import State
 
 class Aggressive:
-    def __init__(self, state: State, opponent: State):
-        self.state = state
+    def __init__(self, player: Player, opponent: Player):
+        self.player = player
         self.opponent = opponent
 
     def next_move(self):
-        if self.opponent.current_action == ActionType.ATTACK_1:
-            if self.opponent.current_action_frame == 1:
+        snapshot = self.opponent.make_snapshot()
+
+        if snapshot.task == FighterTask.ATTACK_1:
+            if snapshot.frame_offset == 1:
                 if random.random() > 0.3:
-                    self.state.request_action(ActionType.DEFENSE)
+                    self.player.request_intent(ActionType.BLOCK)
                     return
 
-        if self.opponent.current_action == ActionType.RIPOSTE:
-            if self.opponent.current_action_frame == 2:
+        if snapshot.task == FighterTask.RIPOSTE:
+            if snapshot.frame_offset == 2:
                 if random.random() > 0.3:
-                    self.state.request_action(ActionType.DEFENSE)
+                    self.player.request_intent(ActionType.BLOCK)
                     return
 
-        if self.opponent.current_action == ActionType.STUNNED:
+        if snapshot.task == FighterTask.STUNNED:
             if random.random() > 0.3:
-                self.state.request_action(ActionType.ATTACK_1)
+                self.player.request_intent(ActionType.ATTACK)
             return
 
-        if self.state.stamina >= self.state.stats.max_stamina // 2:
+        if snapshot.stamina >= snapshot.max_stamina // 2:
             if random.random() > 0.8:
-                self.state.request_action(ActionType.ATTACK_1)
+                self.player.request_intent(ActionType.ATTACK)
             return

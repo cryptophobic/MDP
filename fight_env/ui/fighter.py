@@ -1,24 +1,24 @@
 from typing import Optional
 import pygame
 
-from fight_env.state.state import State
+from fight_env.player.refs.animations import animations
+from fight_env.player.player_snapshot import PlayerSnapshot
 
 class Fighter:
     def __init__(self, x: int, y: int, facing_right: bool = True):
         self.x = x
         self.y = y
         self.facing_right = facing_right
-        self.state: Optional[State] = None
+        self.state: Optional[PlayerSnapshot] = None
 
-    def set_state(self, state: State):
+    def set_state(self, state: PlayerSnapshot):
         self.state = state
 
     def get_current_frame(self) -> Optional[pygame.Surface]:
-        action = self.state.get_current_action()
-        animation = action.animation
+        task = self.state.task
+        animation = animations.get(task, None)
         if animation:
-            ahead = self.state.global_frame_number - self.state.action_start_frame
-            frame = animation.get_frame(ahead)
+            frame = animation.get_frame(self.state.frame_offset)
             if not self.facing_right:
                 return pygame.transform.flip(frame, True, False)
             return frame

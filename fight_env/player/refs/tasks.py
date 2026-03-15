@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Dict, List
+from typing import Dict
 
 from fight_env.config import BASE_STAMINA_RESTORE_VALUE_PER_TICK
-from fight_env.player.events import Events
+from fight_env.player.refs.events import Events
 
 
 class FighterTask(IntEnum):
@@ -32,12 +32,13 @@ TimelineEvents = Dict[int, Events]
 class TaskData:
     task_type: FighterTask
     priority: int = 0
+    start_priority: int = 0
     base_stamina_cost: int = 0
     base_stamina_cost_frame: int = 0
 
     duration: int = 0
     loop: bool = False
-    events: TimelineEvents = field(default_factory=TimelineEvents)
+    events: TimelineEvents = field(default_factory=dict)
 
     interruptible: bool = False
 
@@ -52,11 +53,13 @@ class TaskTimeline:
     @property
     def frame_offset(self) -> int:
         offset = self.frame_number - self.start_frame_number
-        return offset if self.loop else offset % self.duration
+        if self.duration:
+            return offset % self.duration if self.loop else offset
+        return 0
 
     @property
     def current_event(self) -> Events:
-        return self.events.get(self.frame_number, Events.NONE)
+        return self.events.get(self.frame_offset, Events.NONE)
 
     def tick(self):
         self.frame_number += 1
@@ -79,9 +82,10 @@ tasks_data: Dict[FighterTask, TaskData] = {
     FighterTask.STUNNED: TaskData(
         task_type=FighterTask.STUNNED,
         priority=50,
+        start_priority=1,
         base_stamina_cost_frame=-BASE_STAMINA_RESTORE_VALUE_PER_TICK,
         duration=1,
-        loop=True,
+        loop=False,
         events={0: Events.STUNNED},
     ),
     FighterTask.HURT: TaskData(

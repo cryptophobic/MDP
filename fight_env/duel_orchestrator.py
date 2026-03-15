@@ -3,10 +3,9 @@ from fight_env.player.player import Player
 
 
 class DuelOrchestrator:
-    def __init__(self):
-        self.fighter1 = Player("fighter1")
-        self.fighter2 = Player("fighter2")
-
+    def __init__(self, fighter1: Player, fighter2: Player):
+        self.fighter1 = fighter1
+        self.fighter2 = fighter2
 
     def flow(self):
         snapshot1 = self.fighter1.make_snapshot()
@@ -20,11 +19,16 @@ class DuelOrchestrator:
         self.fighter1.process_responses(f1_responses)
         self.fighter2.process_responses(f2_responses)
 
-        self.fighter1.fallback()
-        self.fighter2.fallback()
+        f1_fallback_resolved = self.fighter1.fallback()
+        f2_fallback_resolved = self.fighter2.fallback()
 
-        self.fighter1.process_intent()
-        self.fighter2.process_intent()
+        f1_intent_resolved = self.fighter1.process_intent()
+        f2_intent_resolved = self.fighter2.process_intent()
 
-        self.fighter1.reactive(snapshot1)
-        self.fighter2.reactive(snapshot2)
+        f1_reactive_resolved = self.fighter1.reactive(snapshot1)
+        f2_reactive_resolved = self.fighter2.reactive(snapshot2)
+
+        self.fighter1.cleanup(f1_fallback_resolved, f1_intent_resolved, f1_reactive_resolved)
+        self.fighter2.cleanup(f2_fallback_resolved, f2_intent_resolved, f2_reactive_resolved)
+
+        return f1_responses, f2_responses

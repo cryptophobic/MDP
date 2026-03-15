@@ -1,22 +1,18 @@
-"""
-1. End of STUNNED
-2. Enter STUNNED
-3. Enter HURT
-4. Exit HURT
-4. Enter DEAD
-"""
-from fight_env.player.processing import task_processing
-from fight_env.player.tasks import FighterTask
-from fight_env.protocols.state_protocol import StateProtocol
+from fight_env.player.player_model import PlayerModel
+from fight_env.player.player_snapshot import PlayerSnapshot
+from fight_env.player.refs.tasks import FighterTask
 
 
-def process_changes(current_state: StateProtocol, last_snapshot: StateProtocol) -> None:
+def process_changes(current_state: PlayerModel, last_snapshot: PlayerSnapshot) -> FighterTask:
     if current_state.hp <= 0:
-        task_processing.set_task(current_state, FighterTask.DEAD)
+        return FighterTask.DEAD
     elif current_state.hp < last_snapshot.hp:
-        task_processing.set_task(current_state, FighterTask.HURT)
+        return FighterTask.HURT
     elif current_state.stamina <= 0:
-        task_processing.set_task(current_state, FighterTask.STUNNED)
+        return FighterTask.STUNNED
     elif current_state.task == FighterTask.NONE:
-        task_processing.set_task(current_state, FighterTask.IDLE)
+        return FighterTask.IDLE
+    elif last_snapshot.task == FighterTask.STUNNED:
+        return FighterTask.IDLE if current_state.stamina >= current_state.stats.max_stamina // 2 else FighterTask.STUNNED
 
+    return FighterTask.NONE

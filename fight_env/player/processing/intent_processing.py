@@ -1,27 +1,21 @@
-from dataclasses import dataclass
-from enum import IntEnum
 from typing import Dict, Callable
 
-from fight_env.player.tasks import FighterTask
-from fight_env.protocols.state_protocol import StateProtocol
+from fight_env.player.refs.events import Responses
+from fight_env.player.player_model import PlayerModel
+from fight_env.player.refs.intents import ActionType, intent_task_mapping
+from fight_env.player.refs.tasks import FighterTask
 
+IntentTaskMap = Dict[ActionType, Callable[[PlayerModel], FighterTask]]
 
-class ActionType(IntEnum):
-    NONE = 0
-    ATTACK = 1
-    BLOCK = 2
-    PARRY = 3
+def _resolve_attack(model) -> FighterTask:
+    if any(r.type == Responses.HAS_RIPOSTE_WINDOW_OPEN for r in model.current_responses):
+        return FighterTask.RIPOSTE
+    return FighterTask.ATTACK_1
 
-@dataclass(frozen=True)
-class Intent:
-    action: ActionType
-    ttl: int = 0
+def process_intent(model: PlayerModel) -> FighterTask:
+    action = model.requested_action.action if model.requested_action else ActionType.NONE
+    task = intent_task_mapping[action]
+    if task == FighterTask.ATTACK_1:
+        task = _resolve_attack(model)
 
-IntentTaskMap = Dict[ActionType, Callable[[StateProtocol], FighterTask]]
-
-intent_task_mapping: IntentTaskMap = {
-    ActionType.NONE: lambda model: FighterTask.NONE,
-}
-
-def process_intent(model: StateProtocol, intent: Intent) -> FighterTask:
-    pass
+    return task

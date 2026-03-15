@@ -1,18 +1,21 @@
 import pygame
 
-from fight_env.state.actions import ActionType
+from fight_env.player.player import Player
 from fight_env.animation import FRAME_SIZE
 from fight_env.logger import logger
-from fight_env.state.state import State
+from fight_env.player.processing.intent_processing import ActionType
 from fight_env.ui.fighter import Fighter
 
 
 class Render:
-    def __init__(self, player_state: State, bot_state: State):
+    def __init__(self, player_state: Player, bot_state: Player):
         pygame.init()
         self.width = 800
         self.height = 400
         self.scale = 3
+
+        self.player_state = player_state
+        self.bot_state = bot_state
 
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Fighting Environment")
@@ -22,9 +25,6 @@ class Render:
         # Create fighters
         self.player = Fighter(150, self.height - FRAME_SIZE * self.scale, facing_right=True)
         self.bot = Fighter(self.width - 150 - FRAME_SIZE * self.scale, self.height - FRAME_SIZE * self.scale, facing_right=False)
-
-        self.player.set_state(player_state)
-        self.bot.set_state(bot_state)
 
         # Colors
         self.bg_color = (40, 44, 52)
@@ -39,21 +39,24 @@ class Render:
         if keys[pygame.K_ESCAPE]:
             self.running = False
 
-        # if keys[pygame.K_i]:
-        #     self.bot.state.request_action(ActionType.ATTACK_1)
-        # if keys[pygame.K_o]:
-        #     self.bot.state.request_action(ActionType.DEFENSE)
-        # if keys[pygame.K_p]:
-        #     self.bot.state.request_action(ActionType.PARRY)
+        if keys[pygame.K_i]:
+            self.bot_state.request_intent(ActionType.ATTACK)
+        if keys[pygame.K_o]:
+            self.bot_state.request_intent(ActionType.BLOCK)
+        if keys[pygame.K_p]:
+            self.bot_state.request_intent(ActionType.PARRY)
         if keys[pygame.K_q]:
-            self.player.state.request_action(ActionType.ATTACK_1)
+            self.player_state.request_intent(ActionType.ATTACK)
         if keys[pygame.K_w]:
-            self.player.state.request_action(ActionType.DEFENSE)
+            self.player_state.request_intent(ActionType.BLOCK)
         if keys[pygame.K_e]:
-            self.player.state.request_action(ActionType.PARRY)
+            self.player_state.request_intent(ActionType.PARRY)
 
     def draw(self):
         self.screen.fill(self.bg_color)
+
+        self.player.set_state(self.player_state.make_snapshot())
+        self.bot.set_state(self.bot_state.make_snapshot())
 
         # Draw ground
         ground_y = self.height - 50
@@ -75,12 +78,12 @@ class Render:
         # player_text = font.render(player_state, True, (200, 200, 200))
         # bot_text = font.render(bot_state, True, (200, 200, 200))
         # controls_text = font.render("SPACE: Attack | B: Bot Attack | ESC: Quit", True, (150, 150, 150))
-        logs = logger.get(limit=50, tags={self.bot.state.stats.name, self.player.state.stats.name})
-        lines = [log.body for log in logs if self.player.state.stats.name in log.tags]
+        logs = logger.get(limit=50, tags={self.bot.state.name, self.player.state.name})
+        lines = [log.body for log in logs if self.player.state.name in log.tags]
         last_10 = lines[-14:]  # take last 10 entries
         player_text = font.render("\r\n".join(last_10), True, (200, 200, 200))
 
-        lines = [log.body for log in logs if self.bot.state.stats.name in log.tags]
+        lines = [log.body for log in logs if self.bot.state.name in log.tags]
         last_10 = lines[-14:]  # take last 10 entries
         bot_text = font.render("\r\n".join(last_10), True, (200, 200, 200))
 
@@ -92,8 +95,8 @@ class Render:
 
         for fighter, x in [(self.player, 10), (self.bot, self.width - bar_w - 10)]:
             s = fighter.state
-            hp_ratio = max(s.hp / s.stats.max_hp, 0)
-            st_ratio = max(s.stamina / s.stats.max_stamina, 0)
+            hp_ratio = max(s.hp / s.max_hp, 0)
+            st_ratio = max(s.stamina / s.max_stamina, 0)
 
             # HP bar: dark bg + red fill
             pygame.draw.rect(self.screen, (60, 20, 20), (x, bar_y_hp, bar_w, bar_h))
