@@ -3,13 +3,13 @@ import pygame
 import numpy as np
 from stable_baselines3 import PPO
 
-from fight_env.duel_orchestrator import DuelOrchestrator
 from fight_env.inventory.armour import ArmourTypes
 from fight_env.inventory.shields import Shields
 from fight_env.inventory.weapons import Weapons
 from fight_env.bots.aggressive import Aggressive
 from fight_env.config import FRAME_DURATION
 from fight_env.gym_env import ACTION_TO_IDX, AGENT_ACTIONS
+from fight_env.orchestrator.orchestrator import Orchestrator
 from fight_env.player.player import Player
 from fight_env.player.refs.intents import ActionType
 from fight_env.ui.render import Render
@@ -27,7 +27,7 @@ fighter2.set_armour(ArmourTypes.LIGHT_ARMOUR)
 fighter2.set_shield(Shields.BUCKLER)
 fighter2.set_weapon(Weapons.GLADIUS)
 
-fight = DuelOrchestrator(fighter1, fighter2)
+orchestrator = Orchestrator([fighter1, fighter2])
 bot = Aggressive(fighter2, fighter1)
 render = Render(fighter1, fighter2)
 
@@ -63,7 +63,7 @@ while not fighter1.is_dead and not fighter2.is_dead:
             fighter1.request_intent(agent_action)
 
         bot.next_move()
-        fight.flow()
+        orchestrator.flow()
         render.draw()
     else:
         time.sleep(0.001)

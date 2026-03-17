@@ -1,9 +1,9 @@
 from fight_env.bots.aggressive import Aggressive
 from fight_env.config import FRAME_DURATION
-from fight_env.duel_orchestrator import DuelOrchestrator
 from fight_env.inventory.armour import ArmourTypes
 from fight_env.inventory.shields import Shields
 from fight_env.inventory.weapons import Weapons
+from fight_env.orchestrator.orchestrator import Orchestrator
 from fight_env.player.player import Player
 from fight_env.ticker import ticker
 from fight_env.ui.render import Render
@@ -21,7 +21,7 @@ class FightingGame:
         self.fighter2.set_armour(ArmourTypes.LIGHT_ARMOUR)
         self.fighter2.set_shield(Shields.BUCKLER)
         self.fighter2.set_weapon(Weapons.GLADIUS)
-        self.fight = DuelOrchestrator(self.fighter1, self.fighter2)
+        self.orchestrator = Orchestrator([self.fighter1, self.fighter2])
         self.aggressive_bot = Aggressive(self.fighter2, self.fighter1)
         self.render = Render(self.fighter1, self.fighter2)
 
@@ -35,7 +35,7 @@ class FightingGame:
                 ticker.tick()
                 threshold += FRAME_DURATION
                 self.aggressive_bot.next_move()
-                self.fight.flow()
+                self.orchestrator.flow()
                 self.render.draw()
             else:
                 time.sleep(0.001)

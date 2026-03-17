@@ -12,7 +12,7 @@ class Render:
         pygame.init()
         self.width = 800
         self.height = 400
-        self.scale = 3
+        self.scale = 1
 
         self.player_state = player_state
         self.bot_state = bot_state
@@ -23,8 +23,8 @@ class Render:
         self.running = True
 
         # Create fighters
-        self.player = Fighter(150, self.height - FRAME_SIZE * self.scale, facing_right=True)
-        self.bot = Fighter(self.width - 150 - FRAME_SIZE * self.scale, self.height - FRAME_SIZE * self.scale, facing_right=False)
+        self.player = Fighter((self.width // 2) - (FRAME_SIZE // 2), self.height - FRAME_SIZE * self.scale, facing_right=True)
+        self.bot = Fighter((self.width // 2) - (FRAME_SIZE // 4), self.height - FRAME_SIZE * self.scale, facing_right=False)
 
         # Colors
         self.bg_color = (40, 44, 52)

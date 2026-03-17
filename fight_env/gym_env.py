@@ -5,11 +5,11 @@ from gymnasium import spaces
 import numpy as np
 
 from fight_env.config import DEFAULT_HP, STAMINA_BOTTOM_LIMIT, DEFAULT_STAMINA
-from fight_env.duel_orchestrator import DuelOrchestrator
 from fight_env.inventory.armour import ArmourTypes
 from fight_env.inventory.shields import Shields
 from fight_env.inventory.weapons import Weapons
 from fight_env.bots.aggressive import Aggressive
+from fight_env.orchestrator.orchestrator import Orchestrator
 
 from fight_env.player.player import Player
 from fight_env.player.refs.events import Responses
@@ -64,7 +64,7 @@ class FightEnv(gym.Env):
         self.max_steps = max_steps
         self.agent: Optional[Player] = None
         self.opponent: Optional[Player] = None
-        self.fight: Optional[DuelOrchestrator] = None
+        self.orchestrator: Optional[Orchestrator] = None
         self.bot: Optional[Aggressive] = None
         self.step_count = 0
 
@@ -93,7 +93,7 @@ class FightEnv(gym.Env):
         self.opponent.set_shield(Shields.BUCKLER)
         self.opponent.set_weapon(Weapons.GLADIUS)
 
-        self.fight = DuelOrchestrator(self.agent, self.opponent)
+        self.orchestrator = Orchestrator([self.agent, self.opponent])
         self.bot = Aggressive(self.opponent, self.agent)
         self.step_count = 0
         return self._get_obs(), {}
@@ -108,7 +108,7 @@ class FightEnv(gym.Env):
         self.bot.next_move()
 
         # 2. Update state (resolve, riposte promotion, apply)
-        (f1_res, f2_res), (f1_res2, f2_res2) = self.fight.flow()
+        (f1_res, f2_res), (f1_res2, f2_res2) = self.orchestrator.flow()
 
         # 3. Resolve combat and get responses
         model = self.agent._model
