@@ -3,7 +3,7 @@ import sys
 from fight_env.config import FRAME_DURATION, RESOURCES_DIR, FRAME_SIZE
 
 COLS = 5
-ROWS = 4
+ROWS = 5
 PADDING = 10
 LABEL_HEIGHT = 16
 CELL = FRAME_SIZE + PADDING
@@ -15,6 +15,7 @@ SPRITES = [
     "Defense", "Fighting_Stance", "Hurt", "Idle", "Jump",
     "Jump_Strike", "Parry", "Power_punch_1", "Power_punch_2", "Riposte",
     "Rolling", "Run", "Shield_Strike", "Stunned", "Walk",
+    "Climbing_Ladder", "Descending_Ladder", "Wall_Jump", "Wall_Climbing",
 ]
 
 
