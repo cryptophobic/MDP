@@ -101,22 +101,18 @@ class FightEnv(gym.Env):
     def step(self, action: int):
         self.step_count += 1
 
-        # 1. Set actions: agent's choice + bot's choice
         agent_action = AGENT_ACTIONS[action]
         if agent_action != ActionType.NONE:
             self.agent.request_intent(agent_action)
         self.bot.next_move()
 
-        # 2. Update state (resolve, riposte promotion, apply)
         (f1_res, f2_res), (f1_res2, f2_res2) = self.orchestrator.flow()
 
-        # 3. Resolve combat and get responses
         model = self.agent._model
         stats = model.stats
         base_damage = stats.weapon.base_damage
         critical_damage = stats.weapon.critical_damage
 
-        # 4. Compute reward (f1 = agent, f2 = opponent)
         reward = 0.0
         if f1_res.type == Responses.HAS_ATTACKED:
             reward += 0.3 if f1_res.value == base_damage else 1.0
@@ -125,7 +121,6 @@ class FightEnv(gym.Env):
         if f1_res2.type == Responses.HAS_BEEN_ATTACKED:
             reward -= 0.3 if f1_res2.value == base_damage else 1.0
 
-        # 5. Check terminal conditions
         terminated = self.agent.is_dead or self.opponent.is_dead
         truncated = self.step_count >= self.max_steps
 

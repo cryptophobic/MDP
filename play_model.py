@@ -15,7 +15,8 @@ from fight_env.player.refs.intents import ActionType
 from fight_env.ui.render import Render
 
 
-model = PPO.load("fight_ppo")
+model1 = PPO.load("fight_ppo")
+model2 = PPO.load("fight_ppo")
 
 fighter1 = Player(name="fighter1")
 fighter1.set_armour(ArmourTypes.LIGHT_ARMOUR)
@@ -32,9 +33,9 @@ bot = Aggressive(fighter2, fighter1)
 render = Render(fighter1, fighter2)
 
 
-def get_obs():
-    opponent_snapshot = fighter2.make_snapshot()
-    agent_snapshot = fighter1.make_snapshot()
+def get_obs(f1, f2):
+    opponent_snapshot = f2.make_snapshot()
+    agent_snapshot = f1.make_snapshot()
     return np.array([
         agent_snapshot.hp,
         agent_snapshot.stamina,
@@ -49,6 +50,9 @@ def get_obs():
 dt = time.perf_counter()
 threshold = (dt * 1000) + FRAME_DURATION
 
+strike = False
+rng = np.random.default_rng(42)
+
 while not fighter1.is_dead and not fighter2.is_dead:
     render.handle_input()
     dt = time.perf_counter()
@@ -56,13 +60,20 @@ while not fighter1.is_dead and not fighter2.is_dead:
         threshold += FRAME_DURATION
 
         # Model picks action
-        obs = get_obs()
-        action, _ = model.predict(obs, deterministic=True)
+        obs = get_obs(fighter1, fighter2)
+        action, _ = model1.predict(obs, deterministic=True)
         agent_action = AGENT_ACTIONS[int(action)]
         if agent_action != ActionType.NONE:
             fighter1.request_intent(agent_action)
 
+        obs = get_obs(fighter2, fighter1)
+        action, _ = model2.predict(obs, deterministic=True)
+        agent_action = AGENT_ACTIONS[int(action)]
+        if agent_action != ActionType.NONE:
+            fighter2.request_intent(agent_action)
+
         bot.next_move()
+
         orchestrator.flow()
         render.draw()
     else:
