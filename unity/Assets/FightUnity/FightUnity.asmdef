@@ -1,0 +1,28 @@
+{
+    "name": "FightUnity",
+    "rootNamespace": "FightUnity",
+    "references": [
+        "FightCore",
+        "Unity.InferenceEngine"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.ai.inference",
+            "expression": "",
+            "define": "FIGHT_INFERENCE"
+        },
+        {
+            "name": "com.unity.sentis",
+            "expression": "",
+            "define": "FIGHT_SENTIS"
+        }
+    ],
+    "noEngineReferences": false
+}

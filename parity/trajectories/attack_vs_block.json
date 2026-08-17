@@ -1,0 +1,342 @@
+{
+  "name": "attack_vs_block",
+  "loadout": {
+    "armour": "LIGHT_ARMOUR",
+    "shield": "BUCKLER",
+    "weapon": "GLADIUS"
+  },
+  "agent_script": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "opponent_script": [
+    0,
+    2,
+    2,
+    2,
+    0,
+    0
+  ],
+  "frames": [
+    {
+      "frame": -1,
+      "agent": {
+        "hp": 16,
+        "stamina": 20,
+        "task": 0,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "opponent": {
+        "hp": 16,
+        "stamina": 20,
+        "task": 0,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "obs": [
+        16.0,
+        20.0,
+        0.0,
+        0.0,
+        16.0,
+        0.0,
+        0.0
+      ],
+      "agent_responses": [],
+      "opponent_responses": []
+    },
+    {
+      "frame": 0,
+      "agent_action": 1,
+      "opponent_action": 0,
+      "agent": {
+        "hp": 16,
+        "stamina": 20,
+        "task": 2,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "opponent": {
+        "hp": 16,
+        "stamina": 20,
+        "task": 1,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "obs": [
+        16.0,
+        20.0,
+        2.0,
+        0.0,
+        16.0,
+        1.0,
+        0.0
+      ],
+      "agent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "opponent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "frame": 1,
+      "agent_action": 0,
+      "opponent_action": 2,
+      "agent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 2,
+        "frame_offset": 1,
+        "is_dead": false
+      },
+      "opponent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 6,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "obs": [
+        16.0,
+        17.0,
+        2.0,
+        1.0,
+        16.0,
+        3.0,
+        0.0
+      ],
+      "agent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "opponent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "frame": 2,
+      "agent_action": 0,
+      "opponent_action": 2,
+      "agent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 2,
+        "frame_offset": 2,
+        "is_dead": false
+      },
+      "opponent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 6,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "obs": [
+        16.0,
+        17.0,
+        2.0,
+        2.0,
+        16.0,
+        3.0,
+        0.0
+      ],
+      "agent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "opponent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "frame": 3,
+      "agent_action": 0,
+      "opponent_action": 2,
+      "agent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 2,
+        "frame_offset": 3,
+        "is_dead": false
+      },
+      "opponent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 6,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "obs": [
+        16.0,
+        17.0,
+        2.0,
+        3.0,
+        16.0,
+        3.0,
+        0.0
+      ],
+      "agent_responses": [
+        [
+          11,
+          1
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "opponent_responses": [
+        [
+          12,
+          1
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "frame": 4,
+      "agent_action": 0,
+      "opponent_action": 0,
+      "agent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 1,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "opponent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 1,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "obs": [
+        16.0,
+        17.0,
+        1.0,
+        0.0,
+        16.0,
+        1.0,
+        0.0
+      ],
+      "agent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "opponent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "frame": 5,
+      "agent_action": 0,
+      "opponent_action": 0,
+      "agent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 1,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "opponent": {
+        "hp": 16,
+        "stamina": 17,
+        "task": 1,
+        "frame_offset": 0,
+        "is_dead": false
+      },
+      "obs": [
+        16.0,
+        17.0,
+        1.0,
+        0.0,
+        16.0,
+        1.0,
+        0.0
+      ],
+      "agent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "opponent_responses": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    }
+  ]
+}

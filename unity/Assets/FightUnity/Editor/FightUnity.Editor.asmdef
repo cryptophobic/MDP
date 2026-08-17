@@ -1,0 +1,19 @@
+{
+    "name": "FightUnity.Editor",
+    "rootNamespace": "FightUnity.Editor",
+    "references": [
+        "FightCore",
+        "FightUnity"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
