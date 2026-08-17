@@ -73,6 +73,7 @@ This is the most important invariant in the repo. **Python is ground truth**; `u
 - `FightCore.asmdef` sets `noEngineReferences: true`. Keep it engine-free — MonoBehaviour and inference live in the separate `FightUnity` assembly.
 - **Enum integer values must match exactly** across languages (`FighterTask`, `Events`, `Responses`, `ActionType`). Fixtures serialize them as ints.
 - The observation vector is **not normalized**, by design: the trained model is frozen and was fit on raw ranges, so `Observation.cs` must reproduce `gym_env._get_obs` exactly. Normalizing requires retraining.
+- The observation encoder is currently **duplicated in four places** — `gym_env._get_obs`, `parity/dump_trajectory._observation`, `play_model.get_obs`, and `unity/Assets/FightCore/Observation.cs`. They drift silently (this already caused one wrong-HP bug in playback), and only the first, second and fourth are covered by parity fixtures. Change all four together.
 - Bots call `random.random()` and are therefore kept **out** of the core and out of fixtures — `dump_trajectory.py` drives both fighters with fixed action scripts instead.
 - The C# core must never use `Time.deltaTime`. `FightDemo` drives it on a fixed 120 ms tick accumulator (`FRAME_DURATION` in `fight_env/config.py`).
 
