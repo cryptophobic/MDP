@@ -41,7 +41,7 @@ def get_obs(f1, f2):
         agent_snapshot.stamina,
         ACTION_TO_IDX.get(agent_snapshot.task, 0),
         agent_snapshot.frame_offset,
-        agent_snapshot.hp,
+        opponent_snapshot.hp,
         ACTION_TO_IDX.get(opponent_snapshot.task, 0),
         opponent_snapshot.frame_offset,
     ], dtype=np.float32)
