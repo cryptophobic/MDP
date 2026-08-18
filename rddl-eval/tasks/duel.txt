@@ -1,0 +1,28 @@
+Model the following problem as an RDDL domain, non-fluents block and instance.
+
+Two gunslingers face each other. Each one is described by how much life they
+have left and whether their weapon is currently loaded. On every time step the
+agent controls one of them and may either reload, take a shot at the opponent,
+or take cover.
+
+Shooting only does damage if the weapon is loaded, and it empties the weapon.
+A shot hits with a probability that depends on whether the target has taken
+cover; a hit removes one point of life. Taking cover protects for the current
+step only. Reloading makes the weapon loaded again.
+
+The opponent acts on its own: whenever it is loaded it shoots, and otherwise it
+reloads. The episode ends as soon as one of the two runs out of life. The agent
+is rewarded for the opponent losing life and penalised for losing its own.
+
+Use these names, because the evaluation depends on them:
+
+  - state-fluent  agent-life       : integer, life left for the agent
+  - state-fluent  opponent-life    : integer, life left for the opponent
+  - state-fluent  agent-loaded     : boolean
+  - state-fluent  opponent-loaded  : boolean
+  - action-fluent shoot            : boolean
+  - action-fluent reload           : boolean
+  - action-fluent cover            : boolean
+
+The instance must start both sides with the same life, an unloaded weapon on
+both sides, at most one action per step, and a horizon of 100 steps.

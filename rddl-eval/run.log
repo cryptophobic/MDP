@@ -1,0 +1,21 @@
+task shelves  model google/gemma-4-12b-qat  endpoint http://localhost:1234/v1/chat/completions  runs 5  repairs 1  temperature 0.7
+run 1/5  PASS             first attempt: lint      attempts: 2  -> results\20260818-121621-510_shelves.json
+run 2/5  PASS             first attempt: lint      attempts: 2  -> results\20260818-121845-814_shelves.json
+run 3/5  FAIL at lint     first attempt: lint      attempts: 2  -> results\20260818-122132-912_shelves.json  The top-level `domain shop { ... }` block is followed by a semicolon. Top-level blocks close with `}` and no s
+run 4/5  FAIL at lint     first attempt: lint      attempts: 2  -> results\20260818-122508-748_shelves.json  The top-level `domain shop_management { ... }` block is followed by a semicolon. Top-level blocks close with `
+run 5/5  FAIL at parse    first attempt: lint      attempts: 2  -> results\20260818-122724-087_shelves.json  RDDLParseError: Syntax error on line 19:
+...
+            REFILL : { non-fluent, int };
+            PENALTY : {
+
+summary
+-------
+runs                  5
+first-pass valid      0/5 (0%)
+valid after repair    2/5 (40%)
+first failure by level:
+  extract    0/5 (0%)
+  lint       5/5 (100%)
+  parse      0/5 (0%)
+  simulate   0/5 (0%)
+  semantic   0/5 (0%)

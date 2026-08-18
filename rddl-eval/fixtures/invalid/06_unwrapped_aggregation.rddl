@@ -1,0 +1,68 @@
+domain shelves {
+
+    requirements = {
+        reward-deterministic,
+        integer-valued
+    };
+
+    types {
+        shelf : object;
+    };
+
+    pvariables {
+        DEMAND(shelf)   : { non-fluent, int, default = 1 };
+        CAPACITY        : { non-fluent, int, default = 10 };
+        REFILL          : { non-fluent, int, default = 4 };
+        PENALTY         : { non-fluent, real, default = 5.0 };
+        stock(shelf)    : { state-fluent, int, default = 5 };
+        restock(shelf)  : { action-fluent, bool, default = false };
+    };
+
+    cpfs {
+        stock'(?s) = max[0, min[CAPACITY, stock(?s) - DEMAND(?s) + (if (restock(?s)) then REFILL else 0)]];
+    };
+
+    reward = sum_{?s : shelf} [ PENALTY * (if (stock(?s) == 0) then 1 else 0) ] * -1;
+
+    state-invariants {
+        forall_{?s : shelf} [ stock(?s) >= 0 ];
+        forall_{?s : shelf} [ stock(?s) <= CAPACITY ];
+    };
+
+    action-preconditions {
+        forall_{?s : shelf} [ restock(?s) => (stock(?s) <= CAPACITY) ];
+    };
+
+    termination {
+        false;
+    };
+}
+
+non-fluents shelves_nf {
+    domain = shelves;
+
+    objects {
+        shelf : { s1, s2, s3 };
+    };
+
+    non-fluents {
+        DEMAND(s1) = 1;
+        DEMAND(s2) = 2;
+        DEMAND(s3) = 1;
+    };
+}
+
+instance shelves_inst {
+    domain = shelves;
+    non-fluents = shelves_nf;
+
+    init-state {
+        stock(s1) = 5;
+        stock(s2) = 8;
+        stock(s3) = 3;
+    };
+
+    max-nondef-actions = 1;
+    horizon = 300;
+    discount = 1.0;
+}

@@ -1,0 +1,10 @@
+results/
+spec/rddl.rst
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+parser.out
+parsetab.py
+.idea/

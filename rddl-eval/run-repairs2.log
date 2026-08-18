@@ -1,0 +1,21 @@
+task shelves  model google/gemma-4-12b-qat  endpoint http://localhost:1234/v1/chat/completions  runs 5  repairs 2  temperature 0.7
+run 1/5  PASS             first attempt: lint      attempts: 2  -> results\20260818-123223-349_shelves.json
+run 2/5  PASS             first attempt: parse     attempts: 3  -> results\20260818-123617-830_shelves.json
+run 3/5  FAIL at lint     first attempt: lint      attempts: 3  -> results\20260818-123947-771_shelves.json  The `termination { };` section is empty. Either give it a real termination condition, or remove the section en
+run 4/5  FAIL at parse    first attempt: lint      attempts: 3  -> results\20260818-124319-153_shelves.json  RDDLParseError: Syntax error on line 19:
+...
+            REFILL : { non-fluent, int, default = 5 };
+          
+run 5/5  PASS             first attempt: lint      attempts: 2  -> results\20260818-124529-685_shelves.json
+
+summary
+-------
+runs                  5
+first-pass valid      0/5 (0%)
+valid after repair    3/5 (60%)
+first failure by level:
+  extract    0/5 (0%)
+  lint       4/5 (80%)
+  parse      1/5 (20%)
+  simulate   0/5 (0%)
+  semantic   0/5 (0%)

@@ -1,0 +1,115 @@
+domain frozenlake {
+
+    requirements = {
+        reward-deterministic
+    };
+
+    types {
+        cell : object;
+    };
+
+    pvariables {
+        NORTH(cell, cell) : { non-fluent, bool, default = false };
+        SOUTH(cell, cell) : { non-fluent, bool, default = false };
+        EAST(cell, cell)  : { non-fluent, bool, default = false };
+        WEST(cell, cell)  : { non-fluent, bool, default = false };
+        HOLE(cell)        : { non-fluent, bool, default = false };
+        GOAL(cell)        : { non-fluent, bool, default = false };
+
+        at(cell)          : { state-fluent, bool, default = false };
+
+        move_north        : { action-fluent, bool, default = false };
+        move_south        : { action-fluent, bool, default = false };
+        move_east         : { action-fluent, bool, default = false };
+        move_west         : { action-fluent, bool, default = false };
+    };
+
+    cpfs {
+        at'(?c) =
+            if ( exists_{?f : cell} [ at(?f) ^ (HOLE(?f) | GOAL(?f)) ] )
+            then at(?c)
+            else (
+                  ( move_north ^ exists_{?f : cell} [ at(?f) ^ NORTH(?f, ?c) ] )
+                | ( move_south ^ exists_{?f : cell} [ at(?f) ^ SOUTH(?f, ?c) ] )
+                | ( move_east  ^ exists_{?f : cell} [ at(?f) ^ EAST(?f, ?c) ] )
+                | ( move_west  ^ exists_{?f : cell} [ at(?f) ^ WEST(?f, ?c) ] )
+                | ( at(?c) ^ (
+                        ( move_north ^ ~exists_{?t : cell} [ NORTH(?c, ?t) ] )
+                      | ( move_south ^ ~exists_{?t : cell} [ SOUTH(?c, ?t) ] )
+                      | ( move_east  ^ ~exists_{?t : cell} [ EAST(?c, ?t) ] )
+                      | ( move_west  ^ ~exists_{?t : cell} [ WEST(?c, ?t) ] )
+                      | ( ~move_north ^ ~move_south ^ ~move_east ^ ~move_west )
+                    ) )
+            );
+    };
+
+    // The prime is required: pyRDDLGym evaluates `reward` against the state
+    // *before* the transition, and termination fires on the same step, so an
+    // unprimed `at` would score 0 on the very step that reaches the goal.
+    // (Lint rule 7 bans primes on a CPF right-hand side; the reward is not a CPF.)
+    reward = if ( exists_{?c : cell} [ at'(?c) ^ GOAL(?c) ] ) then 1.0 else 0.0;
+
+    state-invariants {
+        forall_{?c : cell} [ at(?c) => at(?c) ];
+    };
+
+    action-preconditions {
+        (if (move_north) then 1 else 0) + (if (move_south) then 1 else 0)
+      + (if (move_east) then 1 else 0) + (if (move_west) then 1 else 0) <= 1;
+    };
+
+    termination {
+        exists_{?c : cell} [ at(?c) ^ (HOLE(?c) | GOAL(?c)) ];
+    };
+}
+
+non-fluents frozenlake_nf {
+    domain = frozenlake;
+
+    objects {
+        cell : { c0_0, c0_1, c0_2, c1_0, c1_1, c1_2, c2_0, c2_1, c2_2 };
+    };
+
+    non-fluents {
+        NORTH(c1_0, c0_0) = true;
+        NORTH(c1_1, c0_1) = true;
+        NORTH(c1_2, c0_2) = true;
+        NORTH(c2_0, c1_0) = true;
+        NORTH(c2_1, c1_1) = true;
+        NORTH(c2_2, c1_2) = true;
+        SOUTH(c0_0, c1_0) = true;
+        SOUTH(c0_1, c1_1) = true;
+        SOUTH(c0_2, c1_2) = true;
+        SOUTH(c1_0, c2_0) = true;
+        SOUTH(c1_1, c2_1) = true;
+        SOUTH(c1_2, c2_2) = true;
+        EAST(c0_0, c0_1) = true;
+        EAST(c0_1, c0_2) = true;
+        EAST(c1_0, c1_1) = true;
+        EAST(c1_1, c1_2) = true;
+        EAST(c2_0, c2_1) = true;
+        EAST(c2_1, c2_2) = true;
+        WEST(c0_1, c0_0) = true;
+        WEST(c0_2, c0_1) = true;
+        WEST(c1_1, c1_0) = true;
+        WEST(c1_2, c1_1) = true;
+        WEST(c2_1, c2_0) = true;
+        WEST(c2_2, c2_1) = true;
+
+        HOLE(c1_1) = true;
+        GOAL(c2_2) = true;
+    };
+}
+
+instance frozenlake_inst {
+    domain = frozenlake;
+    non-fluents = frozenlake_nf;
+
+    init-state {
+        at(c0_0) = true;
+    };
+
+    max-nondef-actions = 1;
+    horizon = 50;
+    discount = 1.0;
+}

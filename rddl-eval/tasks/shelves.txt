@@ -1,0 +1,29 @@
+Model the following problem as an RDDL domain, non-fluents block and instance.
+
+A small shop has three shelves. Every shelf holds some amount of one product,
+between 0 and 10 units. At every time step each shelf loses a fixed number of
+units to customer demand; different shelves sell at different rates. A shelf
+that has run out sells nothing and costs the shop money for as long as it stays
+empty.
+
+A single employee restocks the shelves. In one time step they can refill at most
+one shelf, which adds a fixed number of units to it. A shelf can never hold more
+than its capacity of 10 units, and can never go below zero: whatever demand
+would take it past zero is simply lost.
+
+The objective is to keep the shelves stocked: the shop pays a penalty for every
+shelf that is empty at a given step, and there is no other source of reward.
+
+Use these names, because the evaluation depends on them:
+
+  - type          shelf
+  - state-fluent  stock(shelf)     : integer, current units on a shelf
+  - action-fluent restock(shelf)   : boolean, refill this shelf now
+  - non-fluent    DEMAND(shelf)    : integer units sold per step
+  - non-fluent    CAPACITY         : integer, 10
+  - non-fluent    REFILL           : integer units added by one restock
+  - non-fluent    PENALTY          : real, cost of one empty shelf per step
+
+The instance must declare three shelves (s1, s2, s3) with different demands,
+give them different non-zero initial stock, allow at most one action per step,
+and run for a horizon of 300 steps with a discount of 1.0.
