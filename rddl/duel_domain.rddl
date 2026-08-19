@@ -47,6 +47,24 @@ domain duel {
         STAMFLOOR : { non-fluent, int, default = -4 };// STAMINA_BOTTOM_LIMIT
 
         //---------------------------------------------------------------------
+        // Reward shaping, as instance parameters (one of the study's factors).
+        //
+        // NOTE: the opponent is deliberately NOT modelled here. Bots call
+        // random.random() and are kept out of the core, exactly as they are kept
+        // out of the C# port; both sides take their actions from outside, and
+        // rddl/train_env.py drives @b with the real fight_env/bots/aggressive.py.
+        //---------------------------------------------------------------------
+        R_HIT      : { non-fluent, real, default =  0.3 };
+        R_CRIT     : { non-fluent, real, default =  1.0 };
+        R_TAKE_HIT : { non-fluent, real, default = -0.3 };
+        R_TAKE_CRIT: { non-fluent, real, default = -1.0 };
+        R_WIN      : { non-fluent, real, default =  5.0 };
+        R_LOSE     : { non-fluent, real, default = -5.0 };
+        // 0.0 mirrors the dead branch in gym_env.step (see docs/rddl-formalization.md
+        // section 7.1). Set to 0.5 for the reward the code was clearly meant to pay.
+        R_PARRY    : { non-fluent, real, default =  0.0 };
+
+        //---------------------------------------------------------------------
         // State  (PlayerModel + TaskTimeline)
         //---------------------------------------------------------------------
         curtask(side) : { state-fluent, task, default = @none };
@@ -214,12 +232,18 @@ domain duel {
         dead'(?s)    = dead(?s) | (evt(?s) == @e_dead);
     };
 
-    // gym_env.step reward, for side @a
+    // gym_env.step reward, for side @a, with every coefficient exposed to the
+    // instance file. Defaults are the values gym_env.step was written to pay;
+    // where the Python code silently pays nothing, that is called out below.
     reward =
-          (if (landed(@a)) then (if (evval(@a) == WDMG) then 0.3 else 1.0) else 0.0)
-        - (if (landed(@b)) then (if (evval(@b) == WDMG) then 0.3 else 1.0) else 0.0)
-        + (if (evt(@b) == @e_dead) then 5.0 else 0.0)
-        - (if (evt(@a) == @e_dead) then 5.0 else 0.0);
+        // landed a hit / a riposte crit
+          (if (landed(@a)) then (if (evval(@a) == WDMG) then R_HIT else R_CRIT) else 0.0)
+        // took a hit / a riposte crit
+        + (if (landed(@b)) then (if (evval(@b) == WDMG) then R_TAKE_HIT else R_TAKE_CRIT) else 0.0)
+        // parried an incoming attack (@b's attack was parried by @a)
+        + (if (parried(@b)) then R_PARRY else 0.0)
+        + (if (evt(@b) == @e_dead) then R_WIN else 0.0)
+        + (if (evt(@a) == @e_dead) then R_LOSE else 0.0);
 
     action-preconditions {
         forall_{?s : side} [

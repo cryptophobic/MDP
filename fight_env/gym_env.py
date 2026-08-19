@@ -118,7 +118,7 @@ class FightEnv(gym.Env):
             reward += 0.3 if f1_res.value == base_damage else 1.0
         if f1_res.type == Responses.HAS_PARRIED:
             reward += 0.5
-        if f1_res2.type == Responses.HAS_BEEN_ATTACKED:
+        if f1_res.type == Responses.HAS_BEEN_ATTACKED:
             reward -= 0.3 if f1_res2.value == base_damage else 1.0
 
         terminated = self.agent.is_dead or self.opponent.is_dead

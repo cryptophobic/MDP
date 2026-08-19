@@ -59,6 +59,8 @@ def main() -> int:
                 if fluent:
                     action[f"{fluent}___{side}"] = True
 
+            print(action)
+
             state, _reward, terminated, _truncated, _ = env.step(action)
 
             expected = {"a": frame["agent"], "b": frame["opponent"]}
