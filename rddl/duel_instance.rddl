@@ -1,0 +1,61 @@
+non-fluents duel_nf {
+    domain = duel;
+
+    non-fluents {
+        OTHER(@a) = @b;  OTHER(@b) = @a;
+
+        FNUM(@f0)=0; FNUM(@f1)=1; FNUM(@f2)=2; FNUM(@f3)=3; FNUM(@f4)=4; FNUM(@f5)=5;
+        FSUCC(@f0)=@f1; FSUCC(@f1)=@f2; FSUCC(@f2)=@f3; FSUCC(@f3)=@f4; FSUCC(@f4)=@f5; FSUCC(@f5)=@f5;
+
+        // ---- tasks_data, transcribed ----
+        // FighterTask.NONE
+        TASK_PRIO(@none) = -1;  TASK_INTERRUPT(@none) = true;
+
+        // FighterTask.FIGHTING_STANCE  (fallback, loops, regenerates stamina)
+        TASK_DUR(@stance) = 1;  TASK_LOOP(@stance) = true;  TASK_INTERRUPT(@stance) = true;
+        TASK_SCOST_FRAME(@stance) = -1;
+
+        // FighterTask.ATTACK_1
+        TASK_DUR(@attack1) = 4;  TASK_PRIO(@attack1) = 50;  TASK_SCOST(@attack1) = 2;
+        TASK_EVENT(@attack1, @f0) = @e_attack_started;
+        TASK_EVENT(@attack1, @f2) = @e_attack;
+
+        // FighterTask.DEFENSE
+        TASK_DUR(@defense) = 1;  TASK_PRIO(@defense) = 50;
+        TASK_EVENT(@defense, @f0) = @e_block;
+
+        // FighterTask.PARRY
+        TASK_DUR(@parry) = 4;  TASK_PRIO(@parry) = 50;  TASK_SCOST(@parry) = 2;
+        TASK_EVENT(@parry, @f1) = @e_parry;
+
+        // FighterTask.RIPOSTE
+        TASK_DUR(@riposte) = 5;  TASK_PRIO(@riposte) = 50;  TASK_SCOST(@riposte) = 2;
+        TASK_EVENT(@riposte, @f3) = @e_crit;
+
+        // FighterTask.STUNNED
+        TASK_DUR(@stunned) = 1;  TASK_PRIO(@stunned) = 50;  TASK_SPRIO(@stunned) = 1;
+        TASK_SCOST_FRAME(@stunned) = -1;
+        TASK_EVENT(@stunned, @f0) = @e_stunned;
+
+        // FighterTask.HURT
+        TASK_DUR(@hurt) = 2;  TASK_PRIO(@hurt) = 90;  TASK_SCOST(@hurt) = 2;
+
+        // FighterTask.DEAD
+        TASK_DUR(@dead) = 5;  TASK_PRIO(@dead) = 100;
+        TASK_EVENT(@dead, @f3) = @e_dead;
+    };
+}
+
+instance duel_inst {
+    domain = duel;
+    non-fluents = duel_nf;
+
+    init-state {
+        curtask(@a) = @none;
+        curtask(@b) = @none;
+    };
+
+    max-nondef-actions = 2;
+    horizon = 500;
+    discount = 1.0;
+}

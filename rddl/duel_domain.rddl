@@ -1,0 +1,240 @@
+////////////////////////////////////////////////////////////////////////////////
+// duel — RDDL model of fight_env (fight_env/orchestrator/orchestrator.py flow())
+//
+// One RDDL step == one Orchestrator.flow() == one logical frame (120 ms).
+// Python is ground truth; this file is correct iff it reproduces
+// parity/trajectories/*.json frame-for-frame.
+////////////////////////////////////////////////////////////////////////////////
+domain duel {
+
+    types {
+        side  : {@a, @b};
+        // FighterTask, only the reachable subset
+        task  : {@none, @stance, @attack1, @defense, @stunned, @hurt, @parry, @riposte, @dead};
+        // frame offsets 0..5 (longest task = 5 frames; +1 slot to detect expiry)
+        fidx  : {@f0, @f1, @f2, @f3, @f4, @f5};
+        // Events
+        event : {@e_none, @e_attack_started, @e_attack, @e_crit, @e_block, @e_parry, @e_stunned, @e_dead};
+    };
+
+    pvariables {
+
+        //---------------------------------------------------------------------
+        // Static tables. These ARE tasks_data / inventory, transcribed.
+        //---------------------------------------------------------------------
+        OTHER(side)            : { non-fluent, side,  default = @a };
+
+        TASK_DUR(task)         : { non-fluent, int,   default = 0 };
+        TASK_PRIO(task)        : { non-fluent, int,   default = 0 };
+        TASK_SPRIO(task)       : { non-fluent, int,   default = 0 };
+        TASK_LOOP(task)        : { non-fluent, bool,  default = false };
+        TASK_INTERRUPT(task)   : { non-fluent, bool,  default = false };
+        TASK_SCOST(task)       : { non-fluent, int,   default = 0 };   // base_stamina_cost
+        TASK_SCOST_FRAME(task) : { non-fluent, int,   default = 0 };   // base_stamina_cost_frame
+        TASK_EVENT(task, fidx) : { non-fluent, event, default = @e_none };
+
+        FNUM(fidx)             : { non-fluent, int,   default = 0 };   // fidx -> integer offset
+        FSUCC(fidx)            : { non-fluent, fidx,  default = @f5 }; // offset + 1, saturating
+
+        WDMG    : { non-fluent, int, default = 2 };   // weapon.base_damage
+        WCRIT   : { non-fluent, int, default = 8 };   // weapon.critical_damage
+        WWEIGHT : { non-fluent, int, default = 1 };
+        SDEF    : { non-fluent, int, default = 1 };   // shield.defense
+        SWEIGHT : { non-fluent, int, default = 1 };
+        ARMDEF  : { non-fluent, int, default = 1 };   // armour.defense
+        MAXSTAM : { non-fluent, int, default = 17 };  // DEFAULT_STAMINA - total weight
+        HALFSTAM: { non-fluent, int, default = 8 };   // max_stamina // 2
+        STAMFLOOR : { non-fluent, int, default = -4 };// STAMINA_BOTTOM_LIMIT
+
+        //---------------------------------------------------------------------
+        // State  (PlayerModel + TaskTimeline)
+        //---------------------------------------------------------------------
+        curtask(side) : { state-fluent, task, default = @none };
+        foff(side)    : { state-fluent, fidx, default = @f0 };
+        hp(side)      : { state-fluent, int,  default = 16 };
+        stam(side)    : { state-fluent, int,  default = 20 };  // starts ABOVE max, clamped on first tick
+        dead(side)    : { state-fluent, bool, default = false };
+
+        //---------------------------------------------------------------------
+        // Actions (ActionType). Both sides are controllable so the model can
+        // replay the parity fixtures; for RL, freeze @b via a CPF policy.
+        //---------------------------------------------------------------------
+        act_attack(side) : { action-fluent, bool, default = false };
+        act_block(side)  : { action-fluent, bool, default = false };
+        act_parry(side)  : { action-fluent, bool, default = false };
+
+        //---------------------------------------------------------------------
+        // Intermediate cascade == the stages of Orchestrator.flow()
+        //---------------------------------------------------------------------
+        tick_exp(side) : { interm-fluent, bool };   // timeline.expired at start of tick()
+        etask(side)    : { interm-fluent, task };   // task the event is read from
+        eoff(side)     : { interm-fluent, fidx };   // offset the event is read from
+        ev(side)       : { interm-fluent, event };  // timeline.current_event
+        evt(side)      : { interm-fluent, event };  // materialize_event -> type
+        evval(side)    : { interm-fluent, int };    // materialize_event -> value
+        s1(side)       : { interm-fluent, int };    // stamina after process_current_task
+        ptask(side)    : { interm-fluent, task };   // task after tick()
+        poff(side)     : { interm-fluent, fidx };   // offset after timeline.tick()
+        pexp(side)     : { interm-fluent, bool };   // timeline.expired after tick()
+
+        i_attack(side) : { interm-fluent, bool };
+        parried(side)  : { interm-fluent, bool };
+        blocked(side)  : { interm-fluent, bool };
+        broke(side)    : { interm-fluent, bool };
+        landed(side)   : { interm-fluent, bool };
+        ripwin(side)   : { interm-fluent, bool };
+
+        s2(side)       : { interm-fluent, int };    // stamina after process_responses
+        h2(side)       : { interm-fluent, int };    // hp after process_responses
+
+        want(side)     : { interm-fluent, task };
+        rcand(side)    : { interm-fluent, task };
+
+        // try_transition applied three times; (task, expired, frame_number==0)
+        ch1(side) : { interm-fluent, bool };
+        k1(side)  : { interm-fluent, task };
+        e1(side)  : { interm-fluent, bool };
+        ch2(side) : { interm-fluent, bool };
+        k2(side)  : { interm-fluent, task };
+        e2(side)  : { interm-fluent, bool };
+        ch3(side) : { interm-fluent, bool };
+        k3(side)  : { interm-fluent, task };
+    };
+
+    cpfs {
+
+        //=====================================================================
+        // flow() step 2 — tick(): process_current_task, then materialize_event
+        //=====================================================================
+        tick_exp(?s) = FNUM(foff(?s)) >= TASK_DUR(curtask(?s));
+
+        // process_current_task: enter-cost is paid even on the expiring frame,
+        // per-frame cost and the max_stamina clamp are not.
+        s1(?s) = if (tick_exp(?s))
+                 then stam(?s) - (if (FNUM(foff(?s)) == 0) then TASK_SCOST(curtask(?s)) else 0)
+                 else min[MAXSTAM, stam(?s)
+                                   - (if (FNUM(foff(?s)) == 0) then TASK_SCOST(curtask(?s)) else 0)
+                                   - TASK_SCOST_FRAME(curtask(?s))];
+
+        // on expiry set_task(NONE) happens BEFORE the event is read
+        etask(?s) = if (tick_exp(?s)) then @none else curtask(?s);
+        eoff(?s)  = if (tick_exp(?s)) then @f0 else foff(?s);
+        ev(?s)    = TASK_EVENT(etask(?s), eoff(?s));
+
+        // materialize_event: CRITICAL_ATTACK is re-typed to ATTACK, value from stats
+        evt(?s)   = if (ev(?s) == @e_crit) then @e_attack else ev(?s);
+        evval(?s) = switch (ev(?s)) {
+                        case @e_attack : WDMG,
+                        case @e_crit   : WCRIT,
+                        case @e_block  : SDEF,
+                        default        : 0
+                    };
+
+        // timeline.tick()
+        ptask(?s) = etask(?s);
+        poff(?s)  = if (tick_exp(?s)) then @f0
+                    else if (TASK_LOOP(curtask(?s))) then @f0   // only STANCE loops, duration 1
+                    else FSUCC(foff(?s));
+        pexp(?s)  = FNUM(poff(?s)) >= TASK_DUR(ptask(?s));
+
+        //=====================================================================
+        // flow() step 3 — DuelOrchestrator.resolve() == resolution_table
+        //=====================================================================
+        i_attack(?s) = (evt(?s) == @e_attack);
+        parried(?s)  = i_attack(?s) ^ (evt(OTHER(?s)) == @e_parry);
+        blocked(?s)  = i_attack(?s) ^ (evt(OTHER(?s)) == @e_block) ^ (evval(?s) <= evval(OTHER(?s)));
+        broke(?s)    = i_attack(?s) ^ (evt(OTHER(?s)) == @e_block) ^ (evval(?s) >  evval(OTHER(?s)));
+        landed(?s)   = i_attack(?s) ^ (evt(OTHER(?s)) ~= @e_parry) ^ (evt(OTHER(?s)) ~= @e_block);
+        ripwin(?s)   = (evt(OTHER(?s)) == @e_stunned);
+
+        // process_response(). NOTE: HAS_DEFENSE_BROKEN costs nothing in Python.
+        s2(?s) = if (parried(?s)) then STAMFLOOR
+                 else s1(?s)
+                      - (if (blocked(?s))        then (WWEIGHT + evval(?s)) else 0)
+                      - (if (blocked(OTHER(?s))) then (SWEIGHT + 2 * evval(OTHER(?s)) - SDEF) else 0);
+
+        h2(?s) = max[0, hp(?s) - (if (landed(OTHER(?s))) then (evval(OTHER(?s)) - ARMDEF) else 0)];
+
+        //=====================================================================
+        // flow() steps 4-6 — fallback -> process_intent -> reactive.
+        // Each is the SAME try_transition, applied to the result of the last.
+        //=====================================================================
+
+        // -- intent, with the silent RIPOSTE promotion --
+        want(?s) = if (act_attack(?s)) then (if (ripwin(?s)) then @riposte else @attack1)
+                   else if (act_block(?s)) then @defense
+                   else if (act_parry(?s)) then @parry
+                   else @none;
+
+        // -- step 4: fallback -> FIGHTING_STANCE.  frame_number==0 is false here
+        //    (tick() just incremented it), so the start_priority branch cannot fire.
+        ch1(?s) = pexp(?s)
+                  | ( (ptask(?s) ~= @stance)
+                      ^ ( (TASK_PRIO(@stance) > TASK_PRIO(ptask(?s)))
+                          | ( (TASK_PRIO(@stance) == TASK_PRIO(ptask(?s))) ^ TASK_INTERRUPT(ptask(?s)) ) ) );
+        k1(?s)  = if (ch1(?s)) then @stance else ptask(?s);
+        e1(?s)  = if (ch1(?s)) then (TASK_DUR(@stance) == 0) else pexp(?s);
+
+        // -- step 5: process_intent (skipped entirely when the intent is NONE).
+        //    frame_number==0 iff step 4 just set a task (ch1).
+        ch2(?s) = (want(?s) ~= @none)
+                  ^ ( e1(?s)
+                      | ( (k1(?s) ~= want(?s))
+                          ^ ( (TASK_PRIO(want(?s)) > TASK_PRIO(k1(?s)))
+                              | ( (TASK_PRIO(want(?s)) == TASK_PRIO(k1(?s)))
+                                  ^ ( ( ch1(?s) ^ (TASK_SPRIO(want(?s)) > TASK_SPRIO(k1(?s))) )
+                                      | TASK_INTERRUPT(k1(?s)) ) ) ) ) );
+        k2(?s)  = if (ch2(?s)) then want(?s) else k1(?s);
+        e2(?s)  = if (ch2(?s)) then (TASK_DUR(want(?s)) == 0) else e1(?s);
+
+        // -- step 6: reactive == reactive_processing.process_changes
+        rcand(?s) = if (h2(?s) <= 0) then @dead
+                    else if (h2(?s) < hp(?s)) then @hurt
+                    else if (s2(?s) <= 0) then @stunned
+                    else if (k2(?s) == @none) then @stance
+                    else if (curtask(?s) == @stunned)
+                         then (if (s2(?s) >= HALFSTAM) then @stance else @stunned)
+                    else @none;
+
+        ch3(?s) = e2(?s)
+                  | ( (k2(?s) ~= rcand(?s))
+                      ^ ( (TASK_PRIO(rcand(?s)) > TASK_PRIO(k2(?s)))
+                          | ( (TASK_PRIO(rcand(?s)) == TASK_PRIO(k2(?s)))
+                              ^ ( ( (ch1(?s) | ch2(?s)) ^ (TASK_SPRIO(rcand(?s)) > TASK_SPRIO(k2(?s))) )
+                                  | TASK_INTERRUPT(k2(?s)) ) ) ) );
+        k3(?s)  = if (ch3(?s)) then rcand(?s) else k2(?s);
+
+        //=====================================================================
+        // next state
+        //=====================================================================
+        curtask'(?s) = k3(?s);
+        foff'(?s)    = if (ch1(?s) | ch2(?s) | ch3(?s)) then @f0 else poff(?s);
+        hp'(?s)      = h2(?s);
+        stam'(?s)    = s2(?s);
+        dead'(?s)    = dead(?s) | (evt(?s) == @e_dead);
+    };
+
+    // gym_env.step reward, for side @a
+    reward =
+          (if (landed(@a)) then (if (evval(@a) == WDMG) then 0.3 else 1.0) else 0.0)
+        - (if (landed(@b)) then (if (evval(@b) == WDMG) then 0.3 else 1.0) else 0.0)
+        + (if (evt(@b) == @e_dead) then 5.0 else 0.0)
+        - (if (evt(@a) == @e_dead) then 5.0 else 0.0);
+
+    action-preconditions {
+        forall_{?s : side} [
+            (if (act_attack(?s)) then 1 else 0)
+          + (if (act_block(?s))  then 1 else 0)
+          + (if (act_parry(?s))  then 1 else 0) <= 1
+        ];
+    };
+
+    state-invariants {
+        forall_{?s : side} [ hp(?s) >= 0 ];
+        forall_{?s : side} [ stam(?s) >= STAMFLOOR ];
+    };
+
+    termination {
+        exists_{?s : side} [ dead(?s) ];
+    };
+}
